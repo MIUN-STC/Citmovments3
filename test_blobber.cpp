@@ -1,4 +1,4 @@
-// g++ test_blobber.cpp -lopencv_core -lopencv_highgui -lopencv_features2d -lopencv_imgproc -lopencv_video && ./grab | ./a.out
+// g++ test_blobber.cpp -lopencv_core -lopencv_highgui -lopencv_features2d -lopencv_imgproc -lopencv_video -o blobber && ./grab | ./a.out
 
 #include <iostream>
 #include <stdio.h>
