@@ -25,10 +25,24 @@
 //wiringPiSetup
 #include <wiringPi.h>
 
+/*
+enum Log_Type 
+{
+   Log_Info,
+   Log_Cricital
+};
 
+void Log (enum Log_Type Type, FILE * File)
+{
+   switch (Type)
+   {
+      case Log_Info:
+      fprintf ();
+   };
+}
+*/
 
-
-
+FILE * Logfile = NULL;
 int I2C_Device;
 int SPI_Device;
 struct Lepton_Pixel_Grayscale16 Pixmap [Lepton3_Width * Lepton3_Height];
@@ -66,17 +80,17 @@ void Interrupt_Handle ()
    switch (Result)
    {
       case Lepton_Stream_SPI_Error:
-      //printf ("Lepton_Stream_SPI_Error\n");break;
+      fprintf (Log, "Lepton_Stream_SPI_Error\n");break;
       case Lepton_Stream_Shifting:
-      //printf ("Lepton_Stream_Shifting\n");break;
+      fprintf (Log, "Lepton_Stream_Shifting\n");break;
       case Lepton_Stream_Invalid_Row:
-      //printf ("Lepton_Stream_Invalid_Row\n");break;
+      fprintf (Log, "Lepton_Stream_Invalid_Row\n");break;
       case Lepton_Stream_Discard:
-      //printf ("Lepton_Stream_Discard\n");break;
+      fprintf (Log, "Lepton_Stream_Discard\n");break;
       case Lepton_Stream_Mismatch:
-      //printf ("Lepton_Stream_Mismatch\n");break;
+      fprintf (Log, "Lepton_Stream_Mismatch\n");break;
       case Lepton_Stream_Invalid_Segment:
-      //printf ("Lepton_Stream_Invalid_Segment\n");break;
+      fprintf (Log, "Lepton_Stream_Invalid_Segment\n");break;
       break;
    };
    
@@ -93,8 +107,13 @@ void Interrupt_Handle ()
 int main (int argc, char * argv [])
 { 
    I2C_Device = Lepton_I2C_Open (Lepton_Debug_None, "/dev/i2c-1");
-   //SPI_Device = Lepton_SPI_Open (Lepton_Debug0, "/dev/spidev0.0");
+   //SPI_Device = Lepton_SPI_Open (Lepton_Debug_None, "/dev/spidev0.0");
    SPI_Device = Lepton_SPI_Open ("/dev/spidev0.0");
+   
+   Logfile = fopen ("file.txt", "w+");
+   assert (Logfile != NULL);
+   setbuf (Logfile, NULL);
+   fprintf (Logfile, "Test\n");
    
    {
       int Status = Lepton_I2C_Status (Lepton_Debug_None, I2C_Device);
