@@ -1,11 +1,13 @@
-//gcc test_save.c -std=gnu11 -fdiagnostics-color -Wall -Wno-missing-braces -lwiringPi -o save
+//gcc test_save.c -std=gnu11 -fdiagnostics-color -Wall -Wno-missing-braces -o save
 
-#include "../Lepton/Lepton_SPI.h"
-#include "../Lepton/Lepton_I2C.h"
-#include "../Lepton/Lepton_Strings.h"
-#include "../Lepton/Lepton_App.h"
+#include "../Lepton/Lepton.h"
+#include "../Lepton/Lepton_Pixels.h"
+
 //printf
 #include <stdio.h>
+
+//uint64_t
+#include <stdint.h>
 
 //timerfd_create
 #include <sys/timerfd.h>
@@ -19,31 +21,9 @@
 //errrno
 #include <errno.h>
 
+//assert
+#include <assert.h>
 
-/*
-int main (int argc, char * argv [])
-{ 
-   Lepton_App_Init (&App, "/dev/i2c-1", "/dev/spidev0.0");
-   Lepton_Strings_Base_printf (be16toh (App.Status), 10, 2, "Status: %10s\n");
-   
-   App->Handle_Pipe = popen ("gzip - > myfile.gz", "w");
-   assert (App->Handle_Pipe != NULL);
-   
-   {
-      wiringPiSetup ();
-      piHiPri (99);
-      int Pin = 0;
-      int Edge = INT_EDGE_RISING;
-      wiringPiISR (Pin, Edge, &Interrupt_Handle);
-   }
-   
-   while (1)
-   {
-      App_Print_Time (App.Timestamp);
-      sleep (1);
-   }
-}
-*/
 
 
 FILE * Opener ()

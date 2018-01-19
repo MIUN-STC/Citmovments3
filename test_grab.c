@@ -1,4 +1,4 @@
-//gcc test_stdout.c -std=gnu11 -fdiagnostics-color -Wall -Wno-missing-braces -lwiringPi -o grab
+//gcc test_grab.c -std=gnu11 -fdiagnostics-color -Wall -Wno-missing-braces -lwiringPi -o grab
 
 #include "../Lepton/Lepton_SPI.h"
 #include "../Lepton/Lepton_I2C.h"
