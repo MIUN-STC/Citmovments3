@@ -1,5 +1,9 @@
 //gcc test_grab.c -std=gnu11 -fdiagnostics-color -Wall -Wno-missing-braces -lwiringPi -o grab
 
+#include "util.h"
+
+//#define Lepton_Log_Assert Log_Assert
+
 #include "../Lepton/Lepton_SPI.h"
 #include "../Lepton/Lepton_I2C.h"
 #include "../Lepton/Lepton_Strings.h"
@@ -26,7 +30,7 @@
 #include <wiringPi.h>
 
 
-#include "util.h"
+
 
 
 int I2C_Device;
@@ -46,7 +50,6 @@ void Lepton_App_Enable_Vsync (int Device, int Micro_Sleep, size_t Trial_Count)
    {
       Lepton_I2C_Execute 
       (
-         Lepton_Debug_None,
          Device, 
          Lepton_I2C_Command_GPIO_Mode_Set, 
          (void *) &(Mode),
@@ -98,21 +101,21 @@ void Interrupt_Handle ()
 
 int main (int argc, char * argv [])
 { 
-   I2C_Device = Lepton_I2C_Open (Lepton_Debug_None, "/dev/i2c-1");
+   I2C_Device = Lepton_I2C_Open ("/dev/i2c-1");
    //SPI_Device = Lepton_SPI_Open (Lepton_Debug_None, "/dev/spidev0.0");
    SPI_Device = Lepton_SPI_Open ("/dev/spidev0.0");
    
    {
-      int Status = Lepton_I2C_Status (Lepton_Debug_None, I2C_Device);
+      int Status = Lepton_I2C_Status (I2C_Device);
       Lepton_Strings_Base_printf (stderr, be16toh (Status), 10, 2, "Status: %10s\n");
    }
    
-   Lepton_I2C_Write_Command (Lepton_Debug_None, I2C_Device, Lepton_I2C_Command_Reboot);
+   Lepton_I2C_Write_Command (I2C_Device, Lepton_I2C_Command_Reboot);
    sleep (3);
    Lepton_App_Enable_Vsync (I2C_Device, 10, 10);
    
    {
-      int Status = Lepton_I2C_Status (Lepton_Debug_None, I2C_Device);
+      int Status = Lepton_I2C_Status (I2C_Device);
       Lepton_Strings_Base_printf (stderr, be16toh (Status), 10, 2, "Status: %10s\n");
    }
       
@@ -134,7 +137,7 @@ int main (int argc, char * argv [])
       {
          Safe_Counter = 0;
          Log ("Camera has gone haywire! Rebooting now to fix the problem.");
-         Lepton_I2C_Write_Command (Lepton_Debug_None, I2C_Device, Lepton_I2C_Command_Reboot);
+         Lepton_I2C_Write_Command (I2C_Device, Lepton_I2C_Command_Reboot);
          sleep (3);
          Lepton_App_Enable_Vsync (I2C_Device, 10, 10);
       }
