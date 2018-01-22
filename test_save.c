@@ -26,6 +26,7 @@
 
 #include <stdlib.h>
 
+#include "util.h"
 
 //Creates a file.
 //The filename will be a timestamp.
@@ -42,7 +43,7 @@ FILE * Opener ()
    printf (Buffer);
    FILE * Pipe;
    Pipe = popen (Buffer, "w");
-   assert (Pipe != NULL);
+   Log_Assert (Pipe != NULL, "popen");
    return Pipe;
 }
 
@@ -54,12 +55,12 @@ void Delegate (FILE * File)
    size_t const Size = sizeof (Pixmap);
    {
       int R = read (STDIN_FILENO, Pixmap, Size);
-      assert (R == Size);
+      Log_Assert (R == Size, "read");
    }
    
    {
       int R = fwrite (Pixmap, Size, 1, File);
-      assert (R == 1);
+      Log_Assert (R == 1, "fwrite");
    }
 }
 
@@ -74,28 +75,21 @@ long User_Input1 (char * Input)
    long Value;
    errno = 0;
    Value = strtol (Input, &End, 10);
-   if (errno != 0)
-   {
-      printf ("Conversion error, non-convertable part: %s\n", End);
-   };
-   assert (errno == 0);
-   if (Value <= 0)
-   {
-      printf ("Invalid period value. Minimum 1 seconds allowed.\n");
-   }
-   assert (Value >= 1);
-   printf ("Period: %i seconds\n", (int) Value);
+   Log_Assert (errno == 0, "strtol");
+   Log_Assert (End != Input, "Conversion error, non-convertable part: %s\n", End);
+   Log_Assert (Value >= 1, "Invalid period value. Minimum 1 seconds allowed.\n");
+   Log ("Period: %i seconds\n", (int) Value);
    return Value;
 }
 
 
 int main (int argc, char * argv [])
 { 
-   assert (argc == 2);
+   Log_Assert (argc == 2, "Missing one argument period.\n");
    
    int Timer;
    Timer = timerfd_create (CLOCK_MONOTONIC, TFD_NONBLOCK);
-   assert (Timer > 0);
+   Log_Assert (Timer > 0, "timerfd_create\n");
    
    struct itimerspec Spec;
    Spec.it_interval.tv_sec = User_Input1 (argv [1]);
@@ -105,7 +99,7 @@ int main (int argc, char * argv [])
    
    {
       int R = timerfd_settime (Timer, 0, &Spec, NULL);
-      assert (R == 0);
+      Log_Assert (R == 0, "timerfd_settime\n");
    }
    
 
