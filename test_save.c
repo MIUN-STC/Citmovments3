@@ -75,9 +75,9 @@ long User_Input1 (char * Input)
    long Value;
    errno = 0;
    Value = strtol (Input, &End, 10);
-   Log_Assert (errno == 0, "strtol");
+   Log_Assert (errno == 0,   "strtol");
    Log_Assert (End != Input, "Conversion error, non-convertable part: %s\n", End);
-   Log_Assert (Value >= 1, "Invalid period value. Minimum 1 seconds allowed.\n");
+   Log_Assert (Value >= 1,   "Invalid period value. Minimum 1 seconds allowed.\n");
    Log ("Period: %i seconds\n", (int) Value);
    return Value;
 }
@@ -91,6 +91,7 @@ int main (int argc, char * argv [])
    Timer = timerfd_create (CLOCK_MONOTONIC, TFD_NONBLOCK);
    Log_Assert (Timer > 0, "timerfd_create\n");
    
+   //Configure the timer, phase and frequency.
    struct itimerspec Spec;
    Spec.it_interval.tv_sec = User_Input1 (argv [1]);
    Spec.it_interval.tv_nsec = 0;
@@ -102,26 +103,19 @@ int main (int argc, char * argv [])
       Log_Assert (R == 0, "timerfd_settime\n");
    }
    
-
-   
    FILE * Pipe = NULL;
-   
    Pipe = Opener ();
    
    while (1)
    {
       uint64_t N;
       int R = read (Timer, &N, sizeof (N));
+      //Periodicly close and open.
       if (R == sizeof (N))
       { 
-         //printf ("R:%i\n", R);
-         //assert (R == sizeof (N));
          pclose (Pipe);
          Pipe = Opener ();
       }
       Delegate (Pipe);
-      //printf (".");
    }
 }
-
-

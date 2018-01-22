@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdlib.h>
+
 #define KWHT "\x1B[1;37;40m"
 #define KCYA "\x1B[1;35;40m"
 #define KNRM "\x1B[0m"
