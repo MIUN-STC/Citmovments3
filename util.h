@@ -27,7 +27,7 @@ static void Util_Logger
    char const * Function_Name, 
    char const * File_Name, 
    int const Line,
-   char * const Format,
+   char const * Format,
    ...
 )
 {
@@ -36,7 +36,7 @@ static void Util_Logger
    switch (Importance)
    {
       case 0:
-         fprintf (stderr, ""KYEL"%04d. "KNRM "" KWHT"%s:%d"KNRM": "KMAG"runtime log"KNRM". ", Uniqid, File_Name, Line);
+         fprintf (stderr, "" KYEL "%04d. " KNRM "" KWHT "%s:%d" KNRM ": " KMAG "runtime log" KNRM ". ", Uniqid, File_Name, Line);
          vfprintf (stderr, Format, Ap);
          fprintf (stderr, "\n");
       break;

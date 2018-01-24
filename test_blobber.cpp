@@ -18,6 +18,9 @@
 #include "../Lepton/Lepton_Pixels.h"
 
 
+#include "util.h"
+
+
 
 void Reciever (struct Lepton_Pixel_Grayscale16 * Pixmap)
 {
@@ -29,6 +32,10 @@ void Reciever (struct Lepton_Pixel_Grayscale16 * Pixmap)
 
 int main (int argc, char * argv [])
 {
+   Assert (argc == 1, 1, "argc %i.", argc);
+   Assert (argv[0] != NULL, 1, "argv0 %p.", argv[0]);
+   
+   
    int Should_Run = 1;
    
    struct Lepton_Pixel_Grayscale16 Pixmap [Lepton3_Width * Lepton3_Height];
