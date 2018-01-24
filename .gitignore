@@ -1,0 +1,15 @@
+# Blacklist everything
+*
+
+# Whitelist subdirectories
+!*/
+
+# Whitelist extensions
+!.gitignore
+!*.h
+!*.md
+!*.sh
+!*.c
+!*.jpg
+!*.pdf
+!*.gpr
