@@ -18,10 +18,23 @@
 #define Log(M, ...) fprintf (stderr, KWHT"%s:%d"KNRM": "KCYA"runtime log"KNRM". " M "\n", __FILE__, __LINE__, ##__VA_ARGS__);
 */
 
+enum Util_Importance
+{
+   Util_Ignore = 0,
+   Util_Info = 1,
+   Util_Abort = 2
+};
+
+enum Util_Code
+{
+   Util_Normal = __COUNTER__
+};
 
 static void Util_Logger 
 (
-   int Uniqid, 
+   int const Uniqid, 
+   int const Code,
+   char const * Code_String, 
    int const Importance,
    char const * Assertion,
    char const * Function_Name, 
@@ -35,13 +48,18 @@ static void Util_Logger
    va_start (Ap, Format);
    switch (Importance)
    {
-      case 0:
+      case Util_Ignore:
+         break;
+      
+      case Util_Info:
          fprintf (stderr, "" KYEL "%04d. " KNRM "" KWHT "%s:%d" KNRM ": " KMAG "runtime log" KNRM ". ", Uniqid, File_Name, Line);
          vfprintf (stderr, Format, Ap);
          fprintf (stderr, "\n");
-      break;
-      default:
+         break;
+      
+      case Util_Abort:
          fprintf (stderr, "Uniq Id           : %i\n", Uniqid);
+         fprintf (stderr, "Code              : %i = %s\n", Code, Code_String);
          fprintf (stderr, "Importance        : %i\n", Importance);
          fprintf (stderr, "Assertion         : %s\n", Assertion);
          fprintf (stderr, "Function_Name     : %s\n", Function_Name);
@@ -52,11 +70,16 @@ static void Util_Logger
          vfprintf (stderr, Format, Ap);
          fprintf (stderr, "\n\n");
          abort ();
-      break;
+         break;
+      
+      default:
+         break;
    };
    va_end (Ap);
 }
 
-#define Assert(A, Importance, Message, ...) if (!(A)) {Util_Logger(__COUNTER__, Importance, #A, __func__, __FILE__, __LINE__, Message, __VA_ARGS__); }
-#define Log(      Importance, Message, ...)            Util_Logger(__COUNTER__, Importance, "", __func__, __FILE__, __LINE__, Message, __VA_ARGS__)
+#define Assert(A, Message, ...) \
+if (!(A)) {Util_Logger(__COUNTER__, Util_Normal, "Util_Normal", Util_Abort, #A, __func__, __FILE__, __LINE__, Message, __VA_ARGS__); }
+#define Log(Message, ...) \
+Util_Logger(__COUNTER__, Util_Normal, "Util_Normal", Util_Info, "", __func__, __FILE__, __LINE__, Message, __VA_ARGS__)
 

@@ -46,7 +46,7 @@ FILE * Opener ()
    printf (Buffer);
    FILE * Pipe;
    Pipe = popen (Buffer, "w");
-   Assert (Pipe != NULL, 1, "%s", "popen");
+   Assert (Pipe != NULL, "%s", "popen");
    return Pipe;
 }
 
@@ -58,12 +58,12 @@ void Delegate (FILE * File)
    size_t const Size = sizeof (Pixmap);
    {
       int R = read (STDIN_FILENO, Pixmap, Size);
-      Assert (R == (int) Size, 1, "%s", "read");
+      Assert (R == (int) Size, "%s", "read");
    }
    
    {
       int R = fwrite (Pixmap, Size, 1, File);
-      Assert (R == 1, 1, "%s", "fwrite");
+      Assert (R == 1, "%s", "fwrite");
    }
 }
 
@@ -78,21 +78,21 @@ long User_Input1 (char * Input)
    long Value;
    errno = 0;
    Value = strtol (Input, &End, 10);
-   Assert (errno == 0, 1, "%s", "strtol");
-   Assert (End != Input, 1, "%s", "Conversion error, non-convertable part: %s\n", End);
-   Assert (Value >= 1, 1, "%s", "Invalid period value. Minimum 1 seconds allowed.\n");
-   Log (0, "Period: %i seconds\n", (int) Value);
+   Assert (errno == 0, "%s", "strtol");
+   Assert (End != Input, "%s", "Conversion error, non-convertable part: %s\n", End);
+   Assert (Value >= 1, "%s", "Invalid period value. Minimum 1 seconds allowed.\n");
+   Log ("Period: %i seconds\n", (int) Value);
    return Value;
 }
 
 
 int main (int argc, char * argv [])
 { 
-   Assert (argc == 2, 1, "%s", "Missing one argument period.\n");
+   Assert (argc == 2, "%s", "Missing one argument period.\n");
    
    int Timer;
    Timer = timerfd_create (CLOCK_MONOTONIC, TFD_NONBLOCK);
-   Assert (Timer > 0, 1, "%s", "timerfd_create\n");
+   Assert (Timer > 0, "%s", "timerfd_create\n");
    
    //Configure the timer, phase and frequency.
    struct itimerspec Spec;
@@ -103,7 +103,7 @@ int main (int argc, char * argv [])
    
    {
       int R = timerfd_settime (Timer, 0, &Spec, NULL);
-      Assert (R == 0, 1, "%s", "timerfd_settime\n");
+      Assert (R == 0, "%s", "timerfd_settime\n");
    }
    
    FILE * Pipe = NULL;

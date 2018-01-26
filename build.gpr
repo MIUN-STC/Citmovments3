@@ -3,7 +3,7 @@ project Build is
    for Languages use ("C", "C++");
    for Source_Dirs use (".");
    for Object_Dir use "obj";
-   for Exec_Dir use "bin";
+   for Exec_Dir use ".";
    for Main use ("test_grab.c", "test_save.c", "test_blobber.cpp");
    
    package Builder is 

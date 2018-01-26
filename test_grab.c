@@ -41,7 +41,7 @@ _Atomic size_t Safe_Counter = 0;
 
 void Enable_Vsync (int Device, int Micro_Sleep, size_t Trial_Count)
 {
-   Log (0, "%s", "Enabling video syncronization pulse on FLIR Lepton GPIO3 pin.");
+   Log ("%s", "Enabling video syncronization pulse on FLIR Lepton GPIO3 pin.");
    struct Lepton_I2C_GPIO_Mode Mode;
    Mode.Value = htobe16 (Lepton_I2C_GPIO_Mode_Vsync);
    int Stage = 0;
@@ -86,7 +86,7 @@ void Interrupt_Handle ()
    switch (Result)
    {
       case Lepton_Stream_SPI_Error:
-      Log (0, "%s", "Lepton_Stream_SPI_Error");
+      Log ("%s", "Lepton_Stream_SPI_Error");
       break;
       case Lepton_Stream_Shifting:
       //Log ("Lepton_Stream_Shifting");
@@ -110,7 +110,7 @@ void Interrupt_Handle ()
       Safe_Counter = 0;
       
       int R = write (STDOUT_FILENO, Pixmap, sizeof (Pixmap));
-      Assert (R == sizeof (Pixmap), 1, "R = %i. write", R);
+      Assert (R == sizeof (Pixmap), "R = %i. write", R);
    }
 }
 
@@ -128,8 +128,8 @@ void Setup_GPIO3 ()
 
 int main (int argc, char * argv [])
 { 
-   Assert (argc == 1, 1, "argc %i.", argc);
-   Assert (argv[0] != NULL, 1, "argv0 %p.", argv[0]);
+   Assert (argc == 1, "argc %i.", argc);
+   Assert (argv[0] != NULL, "argv0 %p.", argv[0]);
    
    I2C_Device = Lepton_I2C_Open ("/dev/i2c-1");
    Reboot (I2C_Device);
@@ -143,7 +143,7 @@ int main (int argc, char * argv [])
       if (Safe_Counter > 3)
       {
          Safe_Counter = 0;
-         Log (0, "%s", "Camera has gone haywire! Rebooting now to fix the problem.");
+         Log ("%s", "Camera has gone haywire! Rebooting now to fix the problem.");
          Reboot (I2C_Device);
       }
    }
