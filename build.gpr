@@ -4,7 +4,7 @@ project Build is
    for Source_Dirs use (".");
    for Object_Dir use "obj";
    for Exec_Dir use ".";
-   for Main use ("test_grab.c", "test_save.c", "test_blobber.cpp");
+   for Main use ("test_grab.c", "test_save.c", "test_blobber.cpp", "test_render.c");
    
    package Builder is 
    end Builder;
@@ -13,6 +13,7 @@ project Build is
       for Switches ("C") use 
       (
          "-Wno-missing-field-initializers",
+         "-Wno-missing-braces", 
          "-Wno-error=unused-but-set-variable",
          "-std=gnu11", 
          "-fdiagnostics-color", 
@@ -47,6 +48,7 @@ project Build is
    package Linker is
       for Switches ("test_grab.c") use ("-lwiringPi");
       for Switches ("test_blobber.cpp") use ("-lopencv_core", "-lopencv_highgui", "-lopencv_features2d", "-lopencv_imgproc", "-lopencv_video");
+      for Switches ("test_render.c") use ("-lSDL2", "-lm", "-lSDL2_ttf", "-lSDL2_image");
    end Linker;
    
    --// g++ test_blobber.cpp -lopencv_core -lopencv_highgui -lopencv_features2d -lopencv_imgproc -lopencv_video -o blobber && ./grab | ./blobber

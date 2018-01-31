@@ -78,8 +78,14 @@ static void Util_Logger
    va_end (Ap);
 }
 
+#define Assert3arg(A, Code, Message, ...) \
+if (!(A)) {Util_Logger(__COUNTER__, Code, #Code, Util_Abort, #A, __func__, __FILE__, __LINE__, Message, __VA_ARGS__); }
+
 #define Assert(A, Message, ...) \
 if (!(A)) {Util_Logger(__COUNTER__, Util_Normal, "Util_Normal", Util_Abort, #A, __func__, __FILE__, __LINE__, Message, __VA_ARGS__); }
+
 #define Log(Message, ...) \
 Util_Logger(__COUNTER__, Util_Normal, "Util_Normal", Util_Info, "", __func__, __FILE__, __LINE__, Message, __VA_ARGS__)
+
+
 

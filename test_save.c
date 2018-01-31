@@ -78,9 +78,9 @@ long User_Input1 (char * Input)
    long Value;
    errno = 0;
    Value = strtol (Input, &End, 10);
-   Assert (errno == 0, "%s", "strtol");
-   Assert (End != Input, "%s", "Conversion error, non-convertable part: %s\n", End);
-   Assert (Value >= 1, "%s", "Invalid period value. Minimum 1 seconds allowed.\n");
+   Assert (errno == 0, "strtol. Input %s", Input);
+   Assert (End != Input, "%s", "Conversion error, non-convertable part: %s", End);
+   Assert (Value >= 1, "Invalid period value. Minimum 1 seconds allowed. Input %s", Input);
    Log ("Period: %i seconds\n", (int) Value);
    return Value;
 }

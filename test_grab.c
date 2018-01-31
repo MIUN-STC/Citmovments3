@@ -2,7 +2,7 @@
 
 #include "util.h"
 
-//#define Lepton_Log_Assert Log_Assert
+#define Lepton_Assert Assert3arg
 
 #include "../Lepton/Lepton_SPI.h"
 #include "../Lepton/Lepton_I2C.h"
@@ -41,7 +41,7 @@ _Atomic size_t Safe_Counter = 0;
 
 void Enable_Vsync (int Device, int Micro_Sleep, size_t Trial_Count)
 {
-   Log ("%s", "Enabling video syncronization pulse on FLIR Lepton GPIO3 pin.");
+   Log ("%s", "Enabling video syncronization pulse at GPIO3 pin.");
    struct Lepton_I2C_GPIO_Mode Mode;
    Mode.Value = htobe16 (Lepton_I2C_GPIO_Mode_Vsync);
    int Stage = 0;
@@ -65,60 +65,33 @@ void Enable_Vsync (int Device, int Micro_Sleep, size_t Trial_Count)
 
 void Reboot (int Device)
 {
-   {
-      int Status = Lepton_I2C_Status (Device);
-      Lepton_Strings_Base_printf (stderr, be16toh (Status), 10, 2, "Status: %10s\n");
-   }
+   int Status;
+   Status = Lepton_I2C_Status (Device);
+   Lepton_Strings_Base_printf (stderr, be16toh (Status), 10, 2, "Status: %10s\n");
    Lepton_I2C_Write_Command (Device, Lepton_I2C_Command_Reboot);
    sleep (3);
    Enable_Vsync (Device, 10, 10);
-   {
-      int Status = Lepton_I2C_Status (Device);
-      Lepton_Strings_Base_printf (stderr, be16toh (Status), 10, 2, "Status: %10s\n");
-   }
+   Status = Lepton_I2C_Status (Device);
+   Lepton_Strings_Base_printf (stderr, be16toh (Status), 10, 2, "Status: %10s\n");
 }
 
 
 void Interrupt_Handle ()
 {
-   int Result;
+   int32_t Result;
    Result = Lepton_Stream_Accept (SPI_Device, Pixmap);
-   switch (Result)
-   {
-      case Lepton_Stream_SPI_Error:
-      Log ("%s", "Lepton_Stream_SPI_Error");
-      break;
-      case Lepton_Stream_Shifting:
-      //Log ("Lepton_Stream_Shifting");
-      break;
-      case Lepton_Stream_Invalid_Row:
-      //Log ("Lepton_Stream_Invalid_Row");
-      break;
-      case Lepton_Stream_Discard:
-      //Log ("Lepton_Stream_Discard");
-      break;
-      case Lepton_Stream_Mismatch:
-      //Log ("Lepton_Stream_Mismatch");
-      break;
-      case Lepton_Stream_Invalid_Segment:
-      //Log ("Lepton_Stream_Invalid_Segment");
-      break;
-   };
-   
-   if (Result == 4)
-   {
-      Safe_Counter = 0;
-      
-      int R = write (STDOUT_FILENO, Pixmap, sizeof (Pixmap));
-      Assert (R == sizeof (Pixmap), "R = %i. write", R);
-   }
+   if (Result != 4) {return;}
+   Safe_Counter = 0;
+   Result = write (STDOUT_FILENO, Pixmap, sizeof (Pixmap));
+   Assert (Result == sizeof (Pixmap), "wrote %i of %i to STDOUT_FILENO", Result, sizeof (Pixmap));
 }
 
 
 void Setup_GPIO3 ()
 {
-   Log (0, "%s", "wiringPiSetup");
-   wiringPiSetup ();
+   int Result;
+   Result = wiringPiSetup ();
+   Assert (Result >= 0, "wiringPiSetup returned %i", Result);
    piHiPri (99);
    int Pin = 0;
    int Edge = INT_EDGE_RISING;
