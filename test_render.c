@@ -29,85 +29,22 @@
 #include <SDL2/SDL.h>
 
 
-float Map_Linear_float 
-(
-   float X, 
-   float A0, 
-   float A1, 
-   float B0, 
-   float B1
-)
-{
-   //cropping
-   if (X < A0) {return B0;}
-   if (X > A1) {return B1;}
-   //calculate delta
-   float DA;
-   float DB;
-   DA = A1 - A0;
-   DB = B1 - B0;
-   //move to zero
-   X = X - A0;
-   //new scale
-   X = X * DB;
-   //zero division protection
-   if (DA == 0) {return B1;};
-   X = X / DA;
-   //new offset
-   X = X + B0;
-   return X;
-}
-
-void Map_Linear_floatv
-(
-   float const * Source, 
-   float * Destination, 
-   size_t Count, 
-   float A0, 
-   float A1, 
-   float B0, 
-   float B1
-)
-{
-   for 
-   (size_t I = 0; I < Count; I = I + 1)
-   {Destination [I] = Map_Linear_float (Source [I], A0, A1, B0, B1);}
-}
-
-
-void Find_Range_float (float Data, float * Min, float * Max)
-{
-   if (Data > *Max) {*Max = Data;}
-   if (Data < *Min) {*Min = Data;}
-}
-
-
-void Find_Range_floatv 
-(
-   float const * Data, 
-   size_t Count, 
-   float * Min, 
-   float * Max
-)
-{
-   assert ((Count > 0 && Data != NULL) || (Count == 0));
-   for 
-   (size_t I = 0; I < Count; I = I + 1) 
-   {Find_Range_float (Data [I], Min, Max);}
-   assert (*Max >= *Min);
-}
-
-
-void Map_u16v_floatv 
+void Process2
 (
    uint16_t const * Source, 
-   float * Destination, 
-   size_t Count
+   SDL_Texture * Texture, 
+   size_t Width,
+   size_t Height
 )
 {
-   for 
-   (size_t I = 0; I < Count; I = I + 1)
-   {Destination [I] = (float) Source [I];}
+   float M1 [Width * Height];
+   struct Pixel_ABGR8888 M2 [Width * Height];
+   uint16_t Min = UINT16_MAX;
+   uint16_t Max = 0;
+   Find_Range_u16v (Source, Width * Height, &Min, &Max);
+   Map_Linear_u16v_float (Source, M1, Width * Height, Min, Max, 0, 255);
+   Map_Pixel_float_ABGR8888 (M1, M2, Width * Height, Map_Pixel_ABGR8888_Heat256, 256);
+   SDL_UpdateTexture (Texture, NULL, M2, Width * sizeof (struct Pixel_ABGR8888));
 }
 
 
@@ -129,6 +66,7 @@ void Process
    Map_Pixel_float_ABGR8888 (M1, M2, Width * Height, Map_Pixel_ABGR8888_Heat256, 256);
    SDL_UpdateTexture (Texture, NULL, M2, Width * sizeof (struct Pixel_ABGR8888));
 }
+
 
 void Reciever (uint16_t * Destination, size_t Count)
 {
@@ -166,7 +104,7 @@ int main (int argc, char * argv [])
       480, 
       SDL_WINDOW_OPENGL | 
       SDL_WINDOW_SHOWN | 
-      //SDL_WINDOW_FULLSCREEN |
+      SDL_WINDOW_FULLSCREEN |
       0
    );
    Assert (Window != NULL, "SDL_CreateWindow failed. %s", SDL_GetError ());
@@ -184,7 +122,7 @@ int main (int argc, char * argv [])
    
    while (1)
    {
-      usleep (10000);
+      //usleep (10000);
       while (SDL_PollEvent (&Event))
       {
          switch (Event.type)
