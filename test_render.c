@@ -2,6 +2,7 @@
 
 #include "util.h"
 #include "pixel.h"
+#include "map.h"
 
 #include "../Lepton/Lepton.h"
 #include "../Lepton/Lepton_Pixels.h"
