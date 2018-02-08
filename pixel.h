@@ -8,6 +8,8 @@
 #include <errno.h>
 #include <string.h>
 
+#include "map.h"
+
 struct __attribute__((__packed__)) Pixel_ABGR8888
 {
    union
@@ -54,13 +56,15 @@ void Map_Pixel_float_ABGR8888
    float const * Source, 
    struct Pixel_ABGR8888 * Destination, 
    size_t Pixmap_Count, 
+   float Min, 
+   float Max,
    struct Pixel_ABGR8888 const * Colormap,
    size_t Color_Count
 )
 {
    for (size_t I = 0; I < Pixmap_Count; I = I + 1)
    {
-      size_t Index = (int) Source [I];
+      size_t Index = (int) Map_Linear_float (Source [I], Min, Max, 0.0f, (float) Color_Count-1.0f);
       assert (Index < Color_Count);
       Destination [I].Channel.R = Colormap [Index].Channel.R;
       Destination [I].Channel.G = Colormap [Index].Channel.G;

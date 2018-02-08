@@ -33,23 +33,6 @@ int Map_Linear_int (int X, int A0, int A1, int B0, int B1)
 }
 
 
-void Map_Linear_u16v_float
-(
-   uint16_t const * Source, 
-   float * Destination, 
-   size_t Count, 
-   uint16_t A0, 
-   uint16_t A1, 
-   uint16_t B0, 
-   uint16_t B1
-)
-{
-   for 
-   (size_t I = 0; I < Count; I = I + 1)
-   {Destination [I] = (float) Map_Linear_int (Source [I], A0, A1, B0, B1);}
-}
-
-
 float Map_Linear_float 
 (
    float X, 
@@ -94,6 +77,23 @@ void Map_Linear_floatv
    for 
    (size_t I = 0; I < Count; I = I + 1)
    {Destination [I] = Map_Linear_float (Source [I], A0, A1, B0, B1);}
+}
+
+
+void Map_Linear_u16v_float
+(
+   uint16_t const * Source, 
+   float * Destination, 
+   size_t Count, 
+   uint16_t A0, 
+   uint16_t A1, 
+   float B0, 
+   float B1
+)
+{
+   for 
+   (size_t I = 0; I < Count; I = I + 1)
+   {Destination [I] = (float) Map_Linear_float (Source [I], A0, A1, B0, B1);}
 }
 
 
@@ -149,4 +149,19 @@ void Map_u16v_floatv
    for 
    (size_t I = 0; I < Count; I = I + 1)
    {Destination [I] = (float) Source [I];}
+}
+
+
+float Crop_float (float Value, float Min, float Max)
+{
+	if (Value > Max) {return Max;};
+	if (Value < Min) {return Min;};
+	return Value;
+}
+
+
+float Random_Float (float Min, float Max)
+{
+	float F = (float) rand ();
+	return Map_Linear_float (F, 0, RAND_MAX, Min, Max);
 }
