@@ -6,7 +6,7 @@ project Build is
    for Object_Dir use "obj";
    for Exec_Dir use ".";
    --for Main use ("test_grab.c", "test_save.c", "test_blobber.cpp", "test_render.c");
-   for Main use ("test_grab.c", "test_save.c", "test_render.c", "test_mqtt.c");
+   for Main use ("test_grab.c", "test_save.c", "test_render.c", "test_mqtt.c", "test_v4l2.c", "test_particles.c");
    
    package Builder is 
    end Builder;
@@ -51,6 +51,7 @@ project Build is
       for Switches ("test_grab.c") use ("-lwiringPi");
       for Switches ("test_blobber.cpp") use ("-lopencv_core", "-lopencv_highgui", "-lopencv_features2d", "-lopencv_imgproc", "-lopencv_video");
       for Switches ("test_render.c") use ("-lSDL2", "-lm", "-lSDL2_ttf", "-lSDL2_image");
+      for Switches ("test_particles.c") use ("-lSDL2", "-lm", "-lSDL2_ttf", "-lSDL2_image");
       for Switches ("test_mqtt.c") use ("-lmosquitto");
    end Linker;
    

@@ -2,6 +2,7 @@
 
 #include <float.h>
 #include <stdint.h>
+#include <math.h>
 
 int Map_Linear_int (int X, int A0, int A1, int B0, int B1)
 {
@@ -52,11 +53,11 @@ float Map_Linear_float
    DB = B1 - B0;
    //move to zero
    X = X - A0;
-   //new scale
-   X = X * DB;
    //zero division protection
    if (DA == 0) {return B1;};
    X = X / DA;
+   //new scale
+   X = X * DB;
    //new offset
    X = X + B0;
    return X;
@@ -160,8 +161,31 @@ float Crop_float (float Value, float Min, float Max)
 }
 
 
-float Random_Float (float Min, float Max)
+float Random_float (float Min, float Max)
 {
 	float F = (float) rand ();
 	return Map_Linear_float (F, 0, RAND_MAX, Min, Max);
+}
+
+
+void Random_Circle_XY_float 
+(
+	float OX,
+	float OY,
+	float * X,
+	float * Y,
+	float Radius,
+	float XX,
+	float YY,
+	float Width,
+	float Height
+)
+{
+	float Angle;
+	Angle = Map_Linear_float ((float) rand (), 0, RAND_MAX, 0, 2 * M_PI);
+	Radius = Map_Linear_float ((float) rand (), 0, RAND_MAX, 0, Radius);
+	*X = OX + cos (Angle) * Radius;
+	*Y = OY + sin (Angle) * Radius;
+	*X = Crop_float (*X, XX, Width);
+	*Y = Crop_float (*Y, YY, Height);
 }

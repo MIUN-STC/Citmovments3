@@ -76,7 +76,7 @@ int main (int argc, char * argv [argc])
 	
 	int RC;
 	mosquitto_username_pw_set (Mosq, argv [0], argv [1]);
-	mosquitto_connect (Mosq, argv [2], argv [3], 60);
+	mosquitto_connect (Mosq, argv [2], 12345, 60);
 	mosquitto_subscribe (Mosq, NULL, "my_topic", 0);
 	
 	

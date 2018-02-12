@@ -26,6 +26,7 @@
 #include <assert.h>
 #include <float.h>
 #include <stdlib.h>
+#include <math.h>
 
 
 #include <SDL2/SDL.h>
@@ -45,43 +46,35 @@ struct Rectangle2_float
 	float H;
 };
 
-void Point2_float_Random (struct Point2_float * P, size_t Count, struct Rectangle2_float * Area)
+
+void Random_Point2v_float
+(
+	size_t Count, 
+	struct Point2_float Point [Count],
+	size_t Width,
+	size_t Height
+)
 {
 	for (size_t I = 0; I < Count; I = I + 1)
 	{
-		P [I].X = (rand () % (int)Area->W) + Area->X;
-		P [I].Y = (rand () % (int)Area->H) + Area->Y;
+		Point [I].X = Random_float (0, Width-1);
+		Point [I].Y = Random_float (0, Height-1);
 	}
 }
 
-void Redistribution 
+
+void Random_Point2_Delta_float
 (
-	float * M1,
-	size_t Width,
-	size_t Height,
-	struct Point2_float const * P1, 
-	struct Point2_float * P2, 
-	size_t Count
+	struct Point2_float * Point,
+	float Width,
+	float Height,
+	float Delta
 )
 {
-	size_t N = 0;
-	for (size_t I = 0; I < Count; I = I + 1)
-	{
-		size_t Index = Width * (int)P1 [I].Y + (int)P1 [I].X;
-		assert (Index < (Width * Height));
-		float A = M1 [Index] * Random_Float (0.0f, 1.0f) * (float) Count;
-		for (size_t J = 0; J < (size_t) A; J = J + 1)
-		{
-			if (N >= Count) {return;}
-			float DX = M1 [Index] * Random_Float (-0.2f, 0.2f) * Width;
-			float DY = M1 [Index] * Random_Float (-0.2f, 0.2f) * Height;
-			P2 [N].X += DX;
-			P2 [N].Y += DY;
-			P2 [N].X = Crop_float (P2 [I].X, 0, Width - 1);
-			P2 [N].Y = Crop_float (P2 [I].Y, 0, Height - 1);
-			N = N + 1;
-		}
-	}
+	Point->X = Point->X + Random_float (-Delta, Delta);
+	Point->Y = Point->Y + Random_float (-Delta, Delta);
+	Point->X = Crop_float (Point->X, 0, Width-1);
+	Point->Y = Crop_float (Point->Y, 0, Height-1);
 }
 
 
@@ -91,9 +84,8 @@ void Process3
     SDL_Texture * Texture, 
     size_t Width,
     size_t Height,
-    struct Point2_float * P1,
-    struct Point2_float * P2,
-    size_t Count
+    size_t Count,
+    struct Point2_float Pointv [Count]
 )
 {
 	float M1 [Width * Height];
@@ -103,46 +95,48 @@ void Process3
 	Find_Range_u16v (Source, (Width * Height), &Min, &Max);
 	Map_Linear_u16v_float (Source, M1, (Width * Height), Min, Max, 0.0f, 1.0f);
 	Map_Pixel_float_ABGR8888 (M1, M2, (Width * Height), 0.0f, 1.0f, Map_Pixel_ABGR8888_Heat256, 256);
-	
-	Redistribution (M1, Width, Height, P1, P2, Count);
 
 	for (size_t I = 0; I < Count; I = I + 1)
 	{
-		size_t Index = Width * (int)P1 [I].Y + (int)P1 [I].X;
-		assert (Index < (Width * Height));
-		M2 [Index] = (struct Pixel_ABGR8888){255, 255, 255, 0};
+		size_t Index1;
+		size_t Index2;
+		size_t Index;
+		float V1;
+		float V2;
+		Index1 = rand () % Count;
+		Index2 = rand () % Count;
+		Index = Width * (int) Pointv [Index1].Y + (int) Pointv [Index1].X;
+		V1 = M1 [Index];
+		Index = Width * (int) Pointv [Index2].Y + (int) Pointv [Index2].X;
+		V2 = M1 [Index];
+		if (V1 > V2)
+		{
+			Pointv [Index2].Y = Pointv [Index1].Y;
+			Pointv [Index2].X = Pointv [Index1].X;
+		}
+		else
+		{
+			Pointv [Index1].Y = Pointv [Index2].Y;
+			Pointv [Index1].X = Pointv [Index2].X;
+		}
 	}
 
 	for (size_t I = 0; I < Count; I = I + 1)
 	{
-		size_t Index = Width * (int)P2 [I].Y + (int)P2 [I].X;
+		size_t Index = Width * (int) Pointv [I].Y + (int) Pointv [I].X;
+		assert (Index < (Width * Height));
+		Random_Point2_Delta_float (Pointv + I, Width, Height, (1.0f - M1 [I])*Random_float (1.0f, 20.0f));
+	}
+	
+	for (size_t I = 0; I < Count; I = I + 1)
+	{
+		size_t Index = Width * (int) Pointv [I].Y + (int) Pointv [I].X;
 		assert (Index < (Width * Height));
 		M2 [Index] = (struct Pixel_ABGR8888){255, 0, 255, 0};
 	}
 	
 	SDL_UpdateTexture (Texture, NULL, M2, Width * sizeof (struct Pixel_ABGR8888));
 }
-
-
-
-void Process
-(
-    uint16_t const * Source, 
-    SDL_Texture * Texture, 
-    size_t Width,
-    size_t Height
-)
-{
-    float M1 [Width * Height];
-    struct Pixel_ABGR8888 M2 [Width * Height];
-    uint16_t Min = UINT16_MAX;
-    uint16_t Max = 0;
-    Find_Range_u16v (Source, (Width * Height), &Min, &Max);
-    Map_Linear_u16v_float (Source, M1, (Width * Height), Min, Max, 0.0f, 1.0f);
-    Map_Pixel_float_ABGR8888 (M1, M2, (Width * Height), 0.0f, 1.0f, Map_Pixel_ABGR8888_Heat256, 256);
-    SDL_UpdateTexture (Texture, NULL, M2, Width * sizeof (struct Pixel_ABGR8888));
-}
-
 
 
 void Reciever (uint16_t * Destination, size_t Count)
@@ -199,12 +193,9 @@ int main (int argc, char * argv [])
     Assert (Texture != NULL, "SDL_CreateTexture failed. %s", SDL_GetError ());
     SDL_SetTextureBlendMode (Texture, SDL_BLENDMODE_BLEND);
     
-	size_t const Particles_Count = 30;
+	size_t const Particles_Count = 200;
 	struct Point2_float Particles1 [Particles_Count];
-	struct Point2_float Particles2 [Particles_Count];
-	struct Rectangle2_float Rect = {0.0f, 0.0f, (float) Width, (float) Height};
-	Point2_float_Random (Particles1, Particles_Count, &Rect);
-	
+	Random_Point2v_float (Particles_Count, Particles1, Width, Height);
     
     while (1)
     {
@@ -233,9 +224,7 @@ int main (int argc, char * argv [])
         }
         
         Reciever (Pixmap, Width * Height);
-        //Process (Pixmap, Texture, Width, Height);
-        
-        Process3 (Pixmap, Texture, Width, Height, Particles1, Particles2, Particles_Count);
+        Process3 (Pixmap, Texture, Width, Height, Particles_Count, Particles1);
         
         SDL_RenderCopy (Renderer, Texture, NULL, NULL);
         SDL_RenderPresent (Renderer);
