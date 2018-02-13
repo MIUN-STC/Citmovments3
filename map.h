@@ -120,6 +120,74 @@ Find_Range_u16v
 
 
 void 
+Find_Range_Index_u16v 
+(
+	uint16_t const * Data, 
+	size_t Count, 
+	uint16_t * Min_Value, 
+	uint16_t * Max_Value, 
+	size_t * Min_Index,
+	size_t * Max_Index
+)
+{
+	assert ((Count > 0 && Data != NULL) || (Count == 0));
+	for (size_t I = 0; I < Count; I = I + 1) 
+	{
+		if (Data [I] > *Max_Value) 
+		{
+			*Max_Value = Data [I];
+			if (Max_Index != NULL) {*Max_Index = I;} 
+		}
+		if (Data [I] < *Min_Value) 
+		{
+			*Min_Value = Data [I];
+			if (Min_Index != NULL) {*Min_Index = I;} 
+		}
+	}
+	assert (*Max_Value >= *Min_Value);
+}
+
+
+void 
+Find_Range_Index2_u16v 
+(
+	uint16_t const * Data, 
+	size_t Width, 
+	size_t Height, 
+	uint16_t * Min_Value, 
+	uint16_t * Max_Value, 
+	size_t * Min_Index,
+	size_t * Max_Index
+)
+{
+	for (size_t X = 0; X < Width; X = X + 1) 
+	for (size_t Y = 0; Y < Height; Y = Y + 1) 
+	{
+		size_t I = Width * Y + X;
+		
+		if ((Max_Value != NULL) && (Data [I] > *Max_Value)) 
+		{
+			*Max_Value = Data [I];
+			if (Max_Index != NULL) 
+			{
+				Max_Index [0] = X;
+				Max_Index [1] = Y;
+			} 
+		}
+		if ((Min_Value != NULL) && (Data [I] < *Min_Value)) 
+		{
+			*Min_Value = Data [I];
+			if (Min_Index != NULL) 
+			{
+				Min_Index [0] = X;
+				Min_Index [1] = Y;
+			} 
+		}
+	}
+}
+
+
+void 
 Find_Range_float 
 (float Data, float * Min, float * Max)
 {

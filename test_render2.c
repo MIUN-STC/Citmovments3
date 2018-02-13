@@ -30,6 +30,7 @@
 
 
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
 
 
 void Process
@@ -54,6 +55,45 @@ void Process
 }
 
 
+void Process2
+(
+	SDL_Renderer * Renderer, 
+    TTF_Font * Font, 
+    uint16_t const * Source, 
+    SDL_Texture * Texture, 
+    size_t Width,
+    size_t Height,
+    uint16_t Min,
+    uint16_t Max
+)
+{
+	assert (Font != NULL);
+    float Pixmap_float [Width * Height];
+    struct Pixel_ABGR8888 Pixmap_ABGR8888 [Width * Height];
+    Map_Linear_u16v_float (Source, Pixmap_float, (Width * Height), Min, Max, 0.0f, 1.0f);
+    //Convert the scale 0 .. 1 to RGB cold .. warm color scale.
+    Map_Pixel_float_ABGR8888 (Pixmap_float, Pixmap_ABGR8888, (Width * Height), 0.0, 1.0f, Map_Pixel_ABGR8888_Heat256, 256);
+    
+    size_t Max_Index [2];
+    uint16_t Max_Value = 0;
+    Find_Range_Index2_u16v (Source, Width, Height, NULL, &Max_Value, NULL, Max_Index);
+    
+    Pixmap_ABGR8888 [Max_Index [1] * Width + Max_Index [0]] = (struct Pixel_ABGR8888){255, 0, 200, 0};
+    
+    SDL_UpdateTexture (Texture, NULL, Pixmap_ABGR8888, Width * sizeof (struct Pixel_ABGR8888));
+    
+    char Buf [10] = {0};
+    snprintf (Buf, 6, "05%i", Source [Max_Index [1] * Width + Max_Index [0]]);
+    SDL_Surface * Surface = TTF_RenderText_Solid (Font, Buf, (SDL_Color) {000, 255, 000, 255});
+	SDL_Texture * Texture_Font = SDL_CreateTextureFromSurface (Renderer, Surface);
+	SDL_FreeSurface (Surface);
+	SDL_RenderCopy (Renderer, Texture, NULL, NULL);
+	SDL_RenderCopy (Renderer, Texture_Font, NULL, (SDL_Rect []) {Max_Index [0] * (1920/Width), Max_Index [1] * (1080/Height), 200, 100});
+	SDL_DestroyTexture (Texture_Font);
+}
+
+
+
 void Reciever (uint16_t * Destination, size_t Count)
 {
     size_t const Size = sizeof (uint16_t) * Count;
@@ -67,6 +107,7 @@ void Init ()
     int Result;
     Result = SDL_Init (SDL_INIT_VIDEO);
     Assert (Result == 0, "%s", "SDL_Init failed");
+    TTF_Init ();
 }
 
 
@@ -74,12 +115,16 @@ int main (int argc, char * argv [])
 { 
 	Assert (argc == 1, "argc %i.", argc);
 	Assert (argv[0] != NULL, "argv0 %p.", argv[0]);
+	
+	Init ();
 
 	SDL_Window * Window = NULL;
 	SDL_Renderer * Renderer = NULL;
 	SDL_Texture * Texture = NULL;
 	SDL_Event Event;
-
+	TTF_Font * Font = TTF_OpenFont ("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf", 24);
+	assert (Font != NULL);
+	
 	errno = 0;
 	Window = SDL_CreateWindow 
 	(
@@ -105,6 +150,7 @@ int main (int argc, char * argv [])
 	uint16_t Min = UINT16_MAX;
 	uint16_t Max = 0;
 	bool Auto_Gain = true;
+	bool Freeze = false;
 					
 	//int R = SDL_SetHint (SDL_HINT_RENDER_SCALE_QUALITY, "1");
 	//assert (R == SDL_TRUE);
@@ -128,8 +174,14 @@ int main (int argc, char * argv [])
 				printf ("SDL_KEYDOWN %i\n", Event.key.keysym.sym);
 				if (Event.key.keysym.sym == SDLK_ESCAPE)
 				{goto Loop_Exit;}
-				if (Event.key.keysym.sym == SDLK_SPACE)
+				if (Event.key.keysym.sym == SDLK_c)
 				{Auto_Gain = !Auto_Gain;}
+				if (Event.key.keysym.sym == SDLK_SPACE)
+				{Freeze = !Freeze;}
+				if (Event.key.keysym.sym == SDLK_f)
+				{
+					//Process2 (Pixmap, Texture, Width, Height, Min, Max);
+				}
 				break;
 				
 			case SDL_MOUSEBUTTONDOWN:
@@ -149,9 +201,14 @@ int main (int argc, char * argv [])
 		}
 
 		Reciever (Pixmap, Width * Height);
-		Process (Pixmap, Texture, Width, Height, Min, Max);
-		SDL_RenderCopy (Renderer, Texture, NULL, NULL);
-		SDL_RenderPresent (Renderer);
+
+		if (!Freeze)
+		{
+			Process2 (Renderer, Font, Pixmap, Texture, Width, Height, Min, Max);
+			SDL_RenderPresent (Renderer);
+		}
+
+		
 	}
 	Loop_Exit:
 
