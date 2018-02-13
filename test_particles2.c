@@ -32,98 +32,92 @@
 #include <SDL2/SDL.h>
 
 
-void Subtract_floatv 
-(
-	size_t Dim, 
-	float Left [Dim], 
-	float Right [Dim], 
-	float Result [Dim]
-)
+
+
+struct Particle
 {
-	for (size_t I = 0; I < Dim; I = I + 1)
-	{
-		Result [I] = Left [I] - Right [I];
-	}
-}
+	float Position [2];
+	float Weight;
+	float Energy;
+};
 
 
-void Random_Rectangle_floatv
-(
-	size_t Count,
-	float * Result,
-	size_t Dim,
-	float Min [Dim],
-	float Max [Dim]
-)
+struct Atom
 {
-	for (size_t I = 0; I < Count; I = I + 1)
-	for (size_t J = 0; J < Dim;   J = J + 1)
-	{
-		Result [I * Dim + J] = Random_float (Min [J], Max [J]);
-		//printf ("%f %f %f\n", Min [J], Max [J], Result [I * Dim + J]);
-	}
-}
+	struct Particle Proton;
+	size_t Cloud_Size;
+	struct Particle Cloud [10];
+};
 
 
-void Crop_Rectangle_floatv
+void Atoms_Init
 (
-	size_t Count,
-	float * Value,
-	float * Result,
-	size_t Dim,
-	float Min [Dim],
-	float Max [Dim]
-)
-{
-	for (size_t I = 0; I < Count; I = I + 1)
-	for (size_t J = 0; J < Dim;   J = J + 1)
-	{
-		Result [I * Dim + J] = Crop_float (Value [I + J], Min [J], Max [J]);
-	}
-}
-
-
-/*
-void Calc
-(
-	size_t Dim,
+    size_t Width,
+    size_t Height,
 	size_t Atoms_Count,
-	float * Atoms,
-	size_t Electrons_Count,
-	float * Electrons
+	struct Atom Atoms [Atoms_Count]
 )
 {
-	
+	size_t const Dim = 2;
+	float Min [2] = {0, 0};
+	float Max [2] = {Width - 1, Height - 1};
+	for (size_t I = 0; I < Atoms_Count; I = I + 1)
+	{
+		Atoms [I].Cload_Size = 10;
+		Random_Rectangle_floatv (Dim, Atoms [I].Proton.Position, Min, Max);
+		for (size_t J = 0; J < Atoms_Count; J = J + 1)
+		{
+			Atoms [I].Cloud [J].Energy = (float) J;
+		}
+	}
 }
-*/
 
-void Process3
+
+
+void Atoms_Calc
+(
+	size_t Atoms_Count,
+	struct Atom Atoms [Atoms_Count]
+)
+{
+	size_t const Dim = 2;
+	for (size_t I = 0; I < Atoms_Count; I = I + 1)
+	{
+		for (size_t J = 0; J < Atoms_Count; J = J + 1)
+		{
+			Random_Delta_Square_floatv (Dim, Atoms [I].Proton.Position, Atoms [I].Proton.Energy);
+		}
+	}
+}
+
+
+void Draw
 (
     uint16_t const * Source, 
     SDL_Texture * Texture, 
     size_t Width,
     size_t Height,
-    size_t Count,
-    float * Pointv
+    size_t Atoms_Count,
+    struct Atom Atoms [Atoms_Count]
 )
 {
-	float XX [2] = {0, 0};
-	float YY [2] = {Width-1, Height-1};
-	float M1 [Width * Height];
+	size_t const Dim = 2;
+	float Min_Rect [2] = {0, 0};
+	float Max_Rect [2] = {Width - 1, Height - 1};
+	uint16_t M1 [Width * Height];
 	struct Pixel_ABGR8888 M2 [Width * Height];
 	uint16_t Min = UINT16_MAX;
 	uint16_t Max = 0;
 	Find_Range_u16v (Source, (Width * Height), &Min, &Max);
-	Map_Linear_u16v_float (Source, M1, (Width * Height), Min, Max, 0.0f, 1.0f);
-	Map_Pixel_float_ABGR8888 (M1, M2, (Width * Height), 0.0f, 1.0f, Map_Pixel_ABGR8888_Heat256, 256);
+	Map_Linear_u16v_u16v ((Width * Height), Source, M1, Min, Max, 0, 255);
 	
-	Random_Rectangle_floatv (Count, Pointv, 2, XX, YY);
-	//Crop_Rectangle_floatv (Count, Pointv, Pointv, 2, XX, YY);
+	Copy_u16_ABGR8888 ((Width * Height), M1, M2);
 	
-	for (size_t I = 0; I < Count; I = I + 1)
+	for (size_t I = 0; I < Atoms_Count; I = I + 1)
 	{
-		size_t Index = Width * (int) Pointv [I*2 + 1] + (int) Pointv [I*2 + 0];
-		//printf ("%f %f\n", Pointv [I*2 + 0], Pointv [I*2 + 1]);
+		float P [Dim];
+		Crop_Rectangle_floatv (Dim, Atoms [I].Proton.Position, P, Min_Rect, Max_Rect);
+		size_t Index = Width * (int) P [1] + (int) P [0];
 		assert (Index < (Width * Height));
 		M2 [Index] = (struct Pixel_ABGR8888){255, 0, 255, 0};
 	}
@@ -148,10 +142,12 @@ void Init ()
 }
 
 
-int main (int argc, char * argv [])
+int main (int argc, char * argv [argc])
 { 
-    Assert (argc == 1, "argc %i.", argc);
-    Assert (argv[0] != NULL, "argv0 %p.", argv[0]);
+    Assert (argc == 1, "argc %i", argc);
+    Assert (argv != NULL, "argv %p", argv);
+    
+    Init ();
     
     SDL_Window * Window = NULL;
     SDL_Renderer * Renderer = NULL;
@@ -186,8 +182,10 @@ int main (int argc, char * argv [])
     Assert (Texture != NULL, "SDL_CreateTexture failed. %s", SDL_GetError ());
     SDL_SetTextureBlendMode (Texture, SDL_BLENDMODE_BLEND);
     
-	size_t const Particles_Count = 2;
-	float Particles1 [2*Particles_Count];
+	size_t const Atoms_Count = 10;
+	struct Atom Atoms [Atoms_Count];
+	
+	Atoms_Init (Width, Height, Atoms_Count, Atoms);
     
     while (1)
     {
@@ -216,7 +214,8 @@ int main (int argc, char * argv [])
         }
         
         Reciever (Pixmap, Width * Height);
-        Process3 (Pixmap, Texture, Width, Height, Particles_Count, Particles1);
+        Atoms_Calc (Atoms_Count, Atoms);
+        Draw (Pixmap, Texture, Width, Height, Atoms_Count, Atoms);
         
         SDL_RenderCopy (Renderer, Texture, NULL, NULL);
         SDL_RenderPresent (Renderer);

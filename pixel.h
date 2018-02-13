@@ -31,6 +31,24 @@ struct Pixel_ABGR8888 const Map_Pixel_ABGR8888_BW2 [2] = {{0, 0, 0, 0}, {0, 255,
 
 
 
+
+void Copy_u16_ABGR8888 
+(
+   size_t Pixmap_Count,
+   uint16_t const Source [Pixmap_Count],
+   struct Pixel_ABGR8888 Destination [Pixmap_Count]
+)
+{
+   for (size_t I = 0; I < Pixmap_Count; I = I + 1)
+   {
+      Destination [I].Channel.R = Source [I];
+      Destination [I].Channel.G = Source [I];
+      Destination [I].Channel.B = Source [I];
+      Destination [I].Channel.A = 255;
+   }
+}
+
+
 void Map_Pixel_u16_ABGR8888 
 (
    uint16_t const * Source, 

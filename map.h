@@ -98,6 +98,23 @@ void Map_Linear_u16v_float
 }
 
 
+void Map_Linear_u16v_u16v
+(
+	size_t Count,
+	uint16_t const Source [Count], 
+	uint16_t Destination [Count], 
+	uint16_t A0, 
+	uint16_t A1, 
+	float B0, 
+	float B1
+)
+{
+	for 
+	(size_t I = 0; I < Count; I = I + 1)
+	{Destination [I] = (float) Map_Linear_int (Source [I], A0, A1, B0, B1);}
+}
+
+
 void 
 Find_Range_u16 
 (uint16_t Data, uint16_t * Min, uint16_t * Max)
@@ -256,4 +273,79 @@ void Random_Circle_XY_float
 	*Y = OY + sin (Angle) * Radius;
 	*X = Crop_float (*X, XX, Width);
 	*Y = Crop_float (*Y, YY, Height);
+}
+
+
+void Subtract_floatv 
+(
+	size_t Dim, 
+	float Left [Dim], 
+	float Right [Dim], 
+	float Result [Dim]
+)
+{
+	for (size_t I = 0; I < Dim; I = I + 1)
+	{
+		Result [I] = Left [I] - Right [I];
+	}
+}
+
+
+void Random_Rectangle_floatv
+(
+	size_t Dim,
+	float Result [Dim],
+	float Min [Dim],
+	float Max [Dim]
+)
+{
+	for (size_t I = 0; I < Dim; I = I + 1)
+	{
+		Result [I] = Random_float (Min [I], Max [I]);
+	}
+}
+
+
+void Random_Delta_Rectangle_floatv
+(
+	size_t Dim,
+	float Result [Dim],
+	float Min [Dim],
+	float Max [Dim]
+)
+{
+	for (size_t I = 0; I < Dim; I = I + 1)
+	{
+		Result [I] = Result [I] + Random_float (Min [I], Max [I]);
+	}
+}
+
+
+void Random_Delta_Square_floatv
+(
+	size_t Dim,
+	float Result [Dim],
+	float Amount
+)
+{
+	for (size_t I = 0; I < Dim; I = I + 1)
+	{
+		Result [I] = Result [I] + Random_float (-Amount, Amount);
+	}
+}
+
+
+void Crop_Rectangle_floatv
+(
+	size_t Dim,
+	float Value [Dim],
+	float Result [Dim],
+	float Min [Dim],
+	float Max [Dim]
+)
+{
+	for (size_t I = 0; I < Dim; I = I + 1)
+	{
+		Result [I] = Crop_float (Value [I], Min [I], Max [I]);
+	}
 }
