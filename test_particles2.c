@@ -63,9 +63,9 @@ void Atoms_Init
 	float Max [2] = {Width - 1, Height - 1};
 	for (size_t I = 0; I < Atoms_Count; I = I + 1)
 	{
-		Atoms [I].Cload_Size = 10;
+		Atoms [I].Cloud_Size = 10;
 		Random_Rectangle_floatv (Dim, Atoms [I].Proton.Position, Min, Max);
-		for (size_t J = 0; J < Atoms_Count; J = J + 1)
+		for (size_t J = 0; J < Atoms [I].Cloud_Size; J = J + 1)
 		{
 			Atoms [I].Cloud [J].Energy = (float) J;
 		}
@@ -76,18 +76,77 @@ void Atoms_Init
 
 void Atoms_Calc
 (
+    size_t Width,
+    size_t Height,
 	size_t Atoms_Count,
 	struct Atom Atoms [Atoms_Count]
 )
 {
+	float Min [2] = {0, 0};
+	float Max [2] = {Width - 1, Height - 1};
 	size_t const Dim = 2;
 	for (size_t I = 0; I < Atoms_Count; I = I + 1)
 	{
-		for (size_t J = 0; J < Atoms_Count; J = J + 1)
+		Random_Delta_Square_floatv 
+		(
+			Dim, 
+			Atoms [I].Proton.Position, 
+			Atoms [I].Proton.Position, 
+			0.0f
+		);
+		for (size_t J = 0; J < Atoms [I].Cloud_Size; J = J + 1)
 		{
-			Random_Delta_Square_floatv (Dim, Atoms [I].Proton.Position, Atoms [I].Proton.Energy);
+			Random_Delta_Square_floatv 
+			(
+				Dim, 
+				Atoms [I].Proton.Position, 
+				Atoms [I].Cloud [J].Position, 
+				Atoms [I].Cloud [J].Energy
+			);
 		}
 	}
+	
+	for (size_t I = 0; I < Atoms_Count; I = I + 1)
+	for (size_t J = I + 1; J < Atoms_Count; J = J + 1)
+	{
+		float D [Dim];
+		float L;
+		Subtract_floatv 
+		(
+			Dim,
+			Atoms [I].Proton.Position,
+			Atoms [J].Proton.Position,
+			D
+		);
+		L = Dot_floatv (Dim, D, D);
+		if (L < 100.0f)
+		{
+			D [0] *= 1.0f;
+			D [1] *= 1.0f;
+			Add_floatv 
+			(
+				Dim,
+				D,
+				Atoms [I].Proton.Position,
+				Atoms [I].Proton.Position
+			);
+			D [0] *= -1.0f;
+			D [1] *= -1.0f;
+			Add_floatv 
+			(
+				Dim,
+				D,
+				Atoms [J].Proton.Position,
+				Atoms [J].Proton.Position
+			);
+		}
+	}
+	
+	for (size_t I = 0; I < Atoms_Count; I = I + 1)
+	{
+		Crop_Rectangle_floatv (Dim, Atoms [I].Proton.Position, Atoms [I].Proton.Position, Min, Max);
+	}
+	
 }
 
 
@@ -116,10 +175,20 @@ void Draw
 	for (size_t I = 0; I < Atoms_Count; I = I + 1)
 	{
 		float P [Dim];
+		size_t Index;
+		
+		for (size_t J = 0; J < Atoms [I].Cloud_Size; J = J + 1)
+		{
+			Crop_Rectangle_floatv (Dim, Atoms [I].Cloud [J].Position, P, Min_Rect, Max_Rect);
+			Index = Width * (int) P [1] + (int) P [0];
+			assert (Index < (Width * Height));
+			M2 [Index] = (struct Pixel_ABGR8888){255, 255, 0, 0};
+		}
+		
 		Crop_Rectangle_floatv (Dim, Atoms [I].Proton.Position, P, Min_Rect, Max_Rect);
-		size_t Index = Width * (int) P [1] + (int) P [0];
+		Index = Width * (int) P [1] + (int) P [0];
 		assert (Index < (Width * Height));
-		M2 [Index] = (struct Pixel_ABGR8888){255, 0, 255, 0};
+		M2 [Index] = (struct Pixel_ABGR8888){255, 0, 0, 255};
 	}
 	
 	SDL_UpdateTexture (Texture, NULL, M2, Width * sizeof (struct Pixel_ABGR8888));
@@ -144,89 +213,113 @@ void Init ()
 
 int main (int argc, char * argv [argc])
 { 
-    Assert (argc == 1, "argc %i", argc);
-    Assert (argv != NULL, "argv %p", argv);
-    
-    Init ();
-    
-    SDL_Window * Window = NULL;
-    SDL_Renderer * Renderer = NULL;
-    SDL_Texture * Texture = NULL;
-    SDL_Event Event;
-    
-    errno = 0;
-    Window = SDL_CreateWindow 
-    (
-        "Pixmap Renderer", 
-        SDL_WINDOWPOS_UNDEFINED, 
-        SDL_WINDOWPOS_UNDEFINED, 
-        1920, 
-        1080, 
-        SDL_WINDOW_OPENGL | 
-        SDL_WINDOW_SHOWN | 
-        SDL_WINDOW_FULLSCREEN |
-        0
-    );
-    Assert (Window != NULL, "SDL_CreateWindow failed. %s", SDL_GetError ());
-    
-    Renderer = SDL_CreateRenderer (Window, -1, SDL_RENDERER_ACCELERATED);
-    Assert (Renderer != NULL, "SDL_CreateRenderer failed. %s", SDL_GetError ());
-    
-    size_t const Width = Lepton3_Width;
-    size_t const Height = Lepton3_Height;
-    uint16_t Pixmap [Width * Height];
-    memset (Pixmap, 0, sizeof (Pixmap));
-    //int R = SDL_SetHint (SDL_HINT_RENDER_SCALE_QUALITY, "1");
-    //assert (R == SDL_TRUE);
-    Texture = SDL_CreateTexture (Renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, Width, Height);
-    Assert (Texture != NULL, "SDL_CreateTexture failed. %s", SDL_GetError ());
-    SDL_SetTextureBlendMode (Texture, SDL_BLENDMODE_BLEND);
-    
+	Assert (argc == 1, "argc %i", argc);
+	Assert (argv != NULL, "argv %p", argv);
+
+	Init ();
+
+	SDL_Window * Window = NULL;
+	SDL_Renderer * Renderer = NULL;
+	SDL_Texture * Texture = NULL;
+	SDL_Event Event;
+
+	errno = 0;
+	Window = SDL_CreateWindow 
+	(
+		"Pixmap Renderer", 
+		SDL_WINDOWPOS_UNDEFINED, 
+		SDL_WINDOWPOS_UNDEFINED, 
+		1920, 
+		1080, 
+		SDL_WINDOW_OPENGL | 
+		SDL_WINDOW_SHOWN | 
+		SDL_WINDOW_FULLSCREEN |
+		0
+	);
+	Assert (Window != NULL, "SDL_CreateWindow failed. %s", SDL_GetError ());
+
+	Renderer = SDL_CreateRenderer (Window, -1, SDL_RENDERER_ACCELERATED);
+	Assert (Renderer != NULL, "SDL_CreateRenderer failed. %s", SDL_GetError ());
+
+	size_t const Width = Lepton3_Width;
+	size_t const Height = Lepton3_Height;
+	uint16_t Pixmap [Width * Height];
+	memset (Pixmap, 0, sizeof (Pixmap));
+	//int R = SDL_SetHint (SDL_HINT_RENDER_SCALE_QUALITY, "1");
+	//assert (R == SDL_TRUE);
+	Texture = SDL_CreateTexture (Renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, Width, Height);
+	Assert (Texture != NULL, "SDL_CreateTexture failed. %s", SDL_GetError ());
+	SDL_SetTextureBlendMode (Texture, SDL_BLENDMODE_BLEND);
+
 	size_t const Atoms_Count = 10;
 	struct Atom Atoms [Atoms_Count];
-	
+
 	Atoms_Init (Width, Height, Atoms_Count, Atoms);
-    
-    while (1)
-    {
-        //usleep (10000);
-        while (SDL_PollEvent (&Event))
-        {
-            switch (Event.type)
-            {
-                 case SDL_QUIT:
-                 printf ("SDL_QUIT\n");
-                 goto Loop_Exit;
-                 break;
-                 
-                 case SDL_KEYDOWN:
-                 printf ("SDL_KEYDOWN\n");
-                 goto Loop_Exit;
-                 break;
-                 
-                 case SDL_MOUSEBUTTONDOWN:
-                 printf ("SDL_MOUSEBUTTONDOWN\n");
-                 Pixmap [0] = 0;
-                 Pixmap [1] = 255;
-                 
-                 break;
-            }
-        }
-        
-        Reciever (Pixmap, Width * Height);
-        Atoms_Calc (Atoms_Count, Atoms);
-        Draw (Pixmap, Texture, Width, Height, Atoms_Count, Atoms);
-        
-        SDL_RenderCopy (Renderer, Texture, NULL, NULL);
-        SDL_RenderPresent (Renderer);
-    }
-    Loop_Exit:
-    
-    SDL_DestroyTexture (Texture);
-    SDL_DestroyRenderer (Renderer);
-    SDL_DestroyWindow (Window);
-    
-    return 0;
+
+	while (1)
+	{
+		//usleep (10000);
+		while (SDL_PollEvent (&Event))
+		{
+			switch (Event.type)
+			{
+				case SDL_QUIT:
+				printf ("SDL_QUIT\n");
+				goto Loop_Exit;
+				break;
+
+				case SDL_KEYDOWN:
+					if (Event.key.keysym.sym == SDLK_ESCAPE)
+					{goto Loop_Exit;}
+					if (Event.key.keysym.sym == SDLK_UP)
+					{
+						size_t const Dim = 2;
+						float D [2] = {0.0f, -1.0f};
+						Add_floatv  (Dim, D, Atoms [0].Proton.Position, Atoms [0].Proton.Position);
+					}
+					if (Event.key.keysym.sym == SDLK_DOWN)
+					{
+						size_t const Dim = 2;
+						float D [2] = {0.0f, 1.0f};
+						Add_floatv  (Dim, D, Atoms [0].Proton.Position, Atoms [0].Proton.Position);
+					}
+					if (Event.key.keysym.sym == SDLK_LEFT)
+					{
+						size_t const Dim = 2;
+						float D [2] = {-1.0f, 0.0f};
+						Add_floatv  (Dim, D, Atoms [0].Proton.Position, Atoms [0].Proton.Position);
+					}
+					if (Event.key.keysym.sym == SDLK_RIGHT)
+					{
+						size_t const Dim = 2;
+						float D [2] = {1.0f, 0.0f};
+						Add_floatv  (Dim, D, Atoms [0].Proton.Position, Atoms [0].Proton.Position);
+					}
+				break;
+
+				case SDL_MOUSEBUTTONDOWN:
+				printf ("SDL_MOUSEBUTTONDOWN\n");
+				Pixmap [0] = 0;
+				Pixmap [1] = 255;
+
+				break;
+			}
+		}
+
+		Reciever (Pixmap, Width * Height);
+		Atoms_Calc (Width, Height, Atoms_Count, Atoms);
+		Draw (Pixmap, Texture, Width, Height, Atoms_Count, Atoms);
+
+		SDL_RenderCopy (Renderer, Texture, NULL, NULL);
+		SDL_RenderPresent (Renderer);
+	}
+	Loop_Exit:
+
+	SDL_DestroyTexture (Texture);
+	SDL_DestroyRenderer (Renderer);
+	SDL_DestroyWindow (Window);
+
+	return 0;
 }
 
 

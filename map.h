@@ -291,6 +291,37 @@ void Subtract_floatv
 }
 
 
+void Add_floatv 
+(
+	size_t Dim, 
+	float Left [Dim], 
+	float Right [Dim], 
+	float Result [Dim]
+)
+{
+	for (size_t I = 0; I < Dim; I = I + 1)
+	{
+		Result [I] = Left [I] + Right [I];
+	}
+}
+
+
+float Dot_floatv 
+(
+	size_t Dim, 
+	float Left [Dim], 
+	float Right [Dim]
+)
+{
+	float Result;
+	for (size_t I = 0; I < Dim; I = I + 1)
+	{
+		Result = Result + Left [I] * Right [I];
+	}
+	return Result;
+}
+
+
 void Random_Rectangle_floatv
 (
 	size_t Dim,
@@ -324,13 +355,14 @@ void Random_Delta_Rectangle_floatv
 void Random_Delta_Square_floatv
 (
 	size_t Dim,
+	float const Value [Dim],
 	float Result [Dim],
 	float Amount
 )
 {
 	for (size_t I = 0; I < Dim; I = I + 1)
 	{
-		Result [I] = Result [I] + Random_float (-Amount, Amount);
+		Result [I] = Value [I] + Random_float (-Amount, Amount);
 	}
 }
 
