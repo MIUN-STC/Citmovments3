@@ -45,8 +45,11 @@ struct Particle
 struct Atom
 {
 	struct Particle Proton;
-	size_t Cloud_Size;
+	size_t Cloud_Count;
 	struct Particle Cloud [10];
+	float Cloud_Size;
+	float Velocity [2];
+	float Request_Delta [2];
 };
 
 
@@ -63,11 +66,14 @@ void Atoms_Init
 	float Max [2] = {Width - 1, Height - 1};
 	for (size_t I = 0; I < Atoms_Count; I = I + 1)
 	{
-		Atoms [I].Cloud_Size = 10;
+		Atoms [I].Cloud_Count = 10;
+		Atoms [I].Cloud_Size = 1.0f;
+		Atoms [I].Velocity [0] = 0.0f;
+		Atoms [I].Velocity [1] = 0.0f;
 		Random_Rectangle_floatv (Dim, Atoms [I].Proton.Position, Min, Max);
-		for (size_t J = 0; J < Atoms [I].Cloud_Size; J = J + 1)
+		for (size_t J = 0; J < Atoms [I].Cloud_Count; J = J + 1)
 		{
-			Atoms [I].Cloud [J].Energy = (float) J;
+			Atoms [I].Cloud [J].Energy = (float) J + 1.0f;
 		}
 	}
 }
@@ -78,73 +84,114 @@ void Atoms_Calc
 (
     size_t Width,
     size_t Height,
+    uint16_t const * Pixmap,
+    uint16_t Min,
+    uint16_t Max,
 	size_t Atoms_Count,
 	struct Atom Atoms [Atoms_Count]
 )
 {
-	float Min [2] = {0, 0};
-	float Max [2] = {Width - 1, Height - 1};
+	assert (Pixmap != NULL);
+	float Section_Min [2] = {0, 0};
+	float Section_Max [2] = {Width - 1, Height - 1};
 	size_t const Dim = 2;
+	float M1 [Width * Height];
+	Map_Linear_u16v_floatv ((Width * Height), Pixmap, M1, Min, Max, 0.0f, 1.0f);
+	
+	//Strategy.
+	//Move atoms to local peaks.
 	for (size_t I = 0; I < Atoms_Count; I = I + 1)
 	{
-		Random_Delta_Square_floatv 
-		(
-			Dim, 
-			Atoms [I].Proton.Position, 
-			Atoms [I].Proton.Position, 
-			0.0f
-		);
-		for (size_t J = 0; J < Atoms [I].Cloud_Size; J = J + 1)
+		float const * PA = Atoms [I].Proton.Position;
+		float * DA = Atoms [I].Request_Delta;
+		//Random_Delta_Square_floatv 
+		//(Dim, Atoms [I].Proton.Position, Atoms [I].Proton.Position, 2.0f);
+		for (size_t J = 0; J < Atoms [I].Cloud_Count; J = J + 1)
 		{
+			float V;
+			float D [Dim];
+			float * PC = Atoms [I].Cloud [J].Position;
+			float E;
+			size_t Index;
+			
+			E = Atoms [I].Cloud [J].Energy * Atoms [I].Cloud_Size;
 			Random_Delta_Square_floatv 
-			(
-				Dim, 
-				Atoms [I].Proton.Position, 
-				Atoms [I].Cloud [J].Position, 
-				Atoms [I].Cloud [J].Energy
-			);
+			(Dim, PA, PC, E);
+			
+			if (!Intersect_Rectangle_floatv (Dim, PC, Section_Min, Section_Max)) 
+			{continue;}
+			
+			Index = Width * (int) PC [1] + (int) PC [0];
+			assert (Index < (Width * Height));
+			
+			V = M1 [Index] * (1.0f / 10.0f);// * (1.0f / Atoms [I].Cloud [J].Energy);
+			
+			Subtract_floatv 
+			(Dim, PC, PA, D);
+			
+			Multiply_floatv_float_floatv
+			(Dim, D, V, D);
+			
+			// DA := DA + D;
+			Add_floatv (Dim, DA, D, DA);
+
 		}
 	}
-	
+
+
+	//Strategy.
+	//Repel atoms from eachother.
+	//Permutate atoms, (I, J) pair.
 	for (size_t I = 0; I < Atoms_Count; I = I + 1)
 	for (size_t J = I + 1; J < Atoms_Count; J = J + 1)
 	{
 		float D [Dim];
 		float L;
+		
+		//Calculate delta vector between two atoms.
+		//Calculate length between two atoms.
 		Subtract_floatv 
-		(
-			Dim,
-			Atoms [I].Proton.Position,
-			Atoms [J].Proton.Position,
-			D
-		);
+		(Dim, Atoms [I].Proton.Position, Atoms [J].Proton.Position, D);
 		L = Dot_floatv (Dim, D, D);
-		if (L < 100.0f)
+		
+		//Repel if they are too close together.
+		if (L < 30.0f*30.0f)
 		{
-			D [0] *= 1.0f;
-			D [1] *= 1.0f;
+			float K;
+			K = 1.0 / L;
+			D [0] *= K;
+			D [1] *= K;
 			Add_floatv 
-			(
-				Dim,
-				D,
-				Atoms [I].Proton.Position,
-				Atoms [I].Proton.Position
-			);
-			D [0] *= -1.0f;
-			D [1] *= -1.0f;
+			(Dim, D, Atoms [I].Proton.Position, Atoms [I].Proton.Position);
+			D [0] = -D [0];
+			D [1] = -D [1];
 			Add_floatv 
-			(
-				Dim,
-				D,
-				Atoms [J].Proton.Position,
-				Atoms [J].Proton.Position
-			);
+			(Dim, D, Atoms [J].Proton.Position, Atoms [J].Proton.Position);
 		}
 	}
 	
+	//Strategy.
+	//Stop atoms from moving outside the simulation area.
 	for (size_t I = 0; I < Atoms_Count; I = I + 1)
 	{
-		Crop_Rectangle_floatv (Dim, Atoms [I].Proton.Position, Atoms [I].Proton.Position, Min, Max);
+		Crop_Rectangle_floatv (Dim, Atoms [I].Proton.Position, Atoms [I].Proton.Position, Section_Min, Section_Max);
+	}
+	
+	//Strategy.
+	for (size_t I = 0; I < Atoms_Count; I = I + 1)
+	{
+		size_t Index;
+		float P [Dim];
+		P [0] = Atoms [I].Proton.Position [0];
+		P [1] = Atoms [I].Proton.Position [1];
+		Index = Width * (int) P [1] + (int) P [0];
+		assert (Index < (Width * Height));
+		Atoms [I].Cloud_Size = 1.0f / (M1 [Index] * M1 [Index] * 5.0f);
+		
+		Add_floatv 
+		(Dim, Atoms [I].Request_Delta, Atoms [I].Proton.Position, Atoms [I].Proton.Position);
+		Atoms [I].Request_Delta [0] *= 0.7f;
+		Atoms [I].Request_Delta [1] *= 0.7f;
 	}
 	
 }
@@ -154,6 +201,8 @@ void Draw
 (
     uint16_t const * Source, 
     SDL_Texture * Texture, 
+    uint16_t Min,
+    uint16_t Max,
     size_t Width,
     size_t Height,
     size_t Atoms_Count,
@@ -165,30 +214,34 @@ void Draw
 	float Max_Rect [2] = {Width - 1, Height - 1};
 	uint16_t M1 [Width * Height];
 	struct Pixel_ABGR8888 M2 [Width * Height];
-	uint16_t Min = UINT16_MAX;
-	uint16_t Max = 0;
-	Find_Range_u16v (Source, (Width * Height), &Min, &Max);
 	Map_Linear_u16v_u16v ((Width * Height), Source, M1, Min, Max, 0, 255);
 	
 	Copy_u16_ABGR8888 ((Width * Height), M1, M2);
 	
 	for (size_t I = 0; I < Atoms_Count; I = I + 1)
 	{
-		float P [Dim];
-		size_t Index;
+		size_t Index1;
 		
-		for (size_t J = 0; J < Atoms [I].Cloud_Size; J = J + 1)
 		{
+			float P [Dim];
+			Crop_Rectangle_floatv (Dim, Atoms [I].Proton.Position, P, Min_Rect, Max_Rect);
+			Index1 = Width * (int) P [1] + (int) P [0];
+			assert (Index1 < (Width * Height));
+			//if (M1 [Index1] < 80) {continue;};
+		}
+		
+		for (size_t J = 0; J < Atoms [I].Cloud_Count; J = J + 1)
+		{
+			float P [Dim];
+			size_t Index;
 			Crop_Rectangle_floatv (Dim, Atoms [I].Cloud [J].Position, P, Min_Rect, Max_Rect);
 			Index = Width * (int) P [1] + (int) P [0];
 			assert (Index < (Width * Height));
-			M2 [Index] = (struct Pixel_ABGR8888){255, 255, 0, 0};
+			M2 [Index] = (struct Pixel_ABGR8888){255, 255, 50, 50};
 		}
 		
-		Crop_Rectangle_floatv (Dim, Atoms [I].Proton.Position, P, Min_Rect, Max_Rect);
-		Index = Width * (int) P [1] + (int) P [0];
-		assert (Index < (Width * Height));
-		M2 [Index] = (struct Pixel_ABGR8888){255, 0, 0, 255};
+		
+		M2 [Index1] = (struct Pixel_ABGR8888){255, 50, 50, 255};
 	}
 	
 	SDL_UpdateTexture (Texture, NULL, M2, Width * sizeof (struct Pixel_ABGR8888));
@@ -243,6 +296,8 @@ int main (int argc, char * argv [argc])
 
 	size_t const Width = Lepton3_Width;
 	size_t const Height = Lepton3_Height;
+	uint16_t Min;
+	uint16_t Max;
 	uint16_t Pixmap [Width * Height];
 	memset (Pixmap, 0, sizeof (Pixmap));
 	//int R = SDL_SetHint (SDL_HINT_RENDER_SCALE_QUALITY, "1");
@@ -307,8 +362,13 @@ int main (int argc, char * argv [argc])
 		}
 
 		Reciever (Pixmap, Width * Height);
-		Atoms_Calc (Width, Height, Atoms_Count, Atoms);
-		Draw (Pixmap, Texture, Width, Height, Atoms_Count, Atoms);
+		
+		
+		Min = UINT16_MAX;
+		Max = 0;
+		Find_Range_u16v (Pixmap, (Width * Height), &Min, &Max);
+		Atoms_Calc (Width, Height, Pixmap, Min, Max, Atoms_Count, Atoms);
+		Draw (Pixmap, Texture, Min, Max, Width, Height, Atoms_Count, Atoms);
 
 		SDL_RenderCopy (Renderer, Texture, NULL, NULL);
 		SDL_RenderPresent (Renderer);

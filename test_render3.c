@@ -46,7 +46,7 @@ void Process
     struct Pixel_ABGR8888 Pixmap_ABGR8888 [Width * Height];
     
 
-    Map_Linear_u16v_float (Source, Pixmap_float, (Width * Height), Min, Max, 0.0f, 1.0f);
+    Map_Linear_u16v_floatv ((Width * Height), Source, Pixmap_float, Min, Max, 0.0f, 1.0f);
     
     for (size_t I = 0; I < 255; I = I + 1)
     {

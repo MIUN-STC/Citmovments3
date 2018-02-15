@@ -81,11 +81,11 @@ void Map_Linear_floatv
 }
 
 
-void Map_Linear_u16v_float
+void Map_Linear_u16v_floatv
 (
-   uint16_t const * Source, 
-   float * Destination, 
    size_t Count, 
+   uint16_t const Source [Count],
+   float Destination [Count],
    uint16_t A0, 
    uint16_t A1, 
    float B0, 
@@ -279,8 +279,8 @@ void Random_Circle_XY_float
 void Subtract_floatv 
 (
 	size_t Dim, 
-	float Left [Dim], 
-	float Right [Dim], 
+	float const Left [Dim], 
+	float const Right [Dim], 
 	float Result [Dim]
 )
 {
@@ -294,8 +294,8 @@ void Subtract_floatv
 void Add_floatv 
 (
 	size_t Dim, 
-	float Left [Dim], 
-	float Right [Dim], 
+	float const Left [Dim], 
+	float const Right [Dim], 
 	float Result [Dim]
 )
 {
@@ -319,6 +319,36 @@ float Dot_floatv
 		Result = Result + Left [I] * Right [I];
 	}
 	return Result;
+}
+
+
+void Divide_floatv_float_floatv 
+(
+	size_t Dim, 
+	float Value [Dim], 
+	float Amount,
+	float Result [Dim]
+)
+{
+	for (size_t I = 0; I < Dim; I = I + 1)
+	{
+		Result [I] = Value [I] / Amount;
+	}
+}
+
+
+void Multiply_floatv_float_floatv 
+(
+	size_t Dim, 
+	float Value [Dim], 
+	float Amount,
+	float Result [Dim]
+)
+{
+	for (size_t I = 0; I < Dim; I = I + 1)
+	{
+		Result [I] = Value [I] * Amount;
+	}
 }
 
 
@@ -367,7 +397,42 @@ void Random_Delta_Square_floatv
 }
 
 
+int Intersect_Rectangle_floatv
+(
+	size_t Dim,
+	float Value [Dim],
+	float Min [Dim],
+	float Max [Dim]
+)
+{
+	for (size_t I = 0; I < Dim; I = I + 1)
+	{
+		if (Min [I] <= Value [I] && Value [I] <= Max [I]) 
+		{}
+		else 
+		{return 0;}
+	}
+	return 1;
+}
+
+
 void Crop_Rectangle_floatv
+(
+	size_t Dim,
+	float Value [Dim],
+	float Result [Dim],
+	float Min [Dim],
+	float Max [Dim]
+)
+{
+	for (size_t I = 0; I < Dim; I = I + 1)
+	{
+		Result [I] = Crop_float (Value [I], Min [I], Max [I]);
+	}
+}
+
+
+void Mirror_Rectangle_floatv
 (
 	size_t Dim,
 	float Value [Dim],

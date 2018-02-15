@@ -47,7 +47,7 @@ void Process
     struct Pixel_ABGR8888 Pixmap_ABGR8888 [Width * Height];
     
 
-    Map_Linear_u16v_float (Source, Pixmap_float, (Width * Height), Min, Max, 0.0f, 1.0f);
+    Map_Linear_u16v_floatv ((Width * Height), Source, Pixmap_float, Min, Max, 0.0f, 1.0f);
     
     //Convert the scale 0 .. 1 to RGB cold .. warm color scale.
     Map_Pixel_float_ABGR8888 (Pixmap_float, Pixmap_ABGR8888, (Width * Height), 0.0, 1.0f, Map_Pixel_ABGR8888_Heat256, 256);
@@ -70,7 +70,7 @@ void Process2
 	assert (Font != NULL);
     float Pixmap_float [Width * Height];
     struct Pixel_ABGR8888 Pixmap_ABGR8888 [Width * Height];
-    Map_Linear_u16v_float (Source, Pixmap_float, (Width * Height), Min, Max, 0.0f, 1.0f);
+    Map_Linear_u16v_floatv ((Width * Height), Source, Pixmap_float, Min, Max, 0.0f, 1.0f);
     //Convert the scale 0 .. 1 to RGB cold .. warm color scale.
     Map_Pixel_float_ABGR8888 (Pixmap_float, Pixmap_ABGR8888, (Width * Height), 0.0, 1.0f, Map_Pixel_ABGR8888_Heat256, 256);
     

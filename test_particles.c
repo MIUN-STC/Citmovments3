@@ -93,7 +93,7 @@ void Process3
 	uint16_t Min = UINT16_MAX;
 	uint16_t Max = 0;
 	Find_Range_u16v (Source, (Width * Height), &Min, &Max);
-	Map_Linear_u16v_float (Source, M1, (Width * Height), Min, Max, 0.0f, 1.0f);
+	Map_Linear_u16v_floatv ((Width * Height), Source, M1, Min, Max, 0.0f, 1.0f);
 	Map_Pixel_float_ABGR8888 (M1, M2, (Width * Height), 0.0f, 1.0f, Map_Pixel_ABGR8888_Heat256, 256);
 
 	for (size_t I = 0; I < Count; I = I + 1)
