@@ -1,103 +1,46 @@
-#!/usr/bin/env bash
+sudo apt-get remove libopencv*
+sudo apt-get autoremove
+sudo apt-get update
+sudo apt-get upgrade
 
-OPENCV_VERSION="3.4.0"
+sudo apt-get -y install build-essential cmake cmake-curses-gui pkg-config
+sudo apt-get -y install \
+  libjpeg-dev \
+  libtiff5-dev \
+  libjasper-dev \
+  libpng-dev \
+  libavcodec-dev \
+  libavformat-dev \
+  libswscale-dev \
+  libeigen3-dev \
+  libxvidcore-dev \
+  libx264-dev \
+  libgtk2.0-dev
+sudo apt-get -y install libv4l-dev v4l-utils
+sudo modprobe bcm2835-v4l2
+sudo apt-get -y install libatlas-base-dev gfortran
+sudo apt-get -y install libgtkglext1 libgtkglext1-dev
 
-OPENCV_URL="https://github.com/Itseez/opencv/archive/${OPENCV_VERSION}.zip"
-OPENCV_PACKAGE_NAME="opencv-${OPENCV_VERSION}"
-OPENCV_CONTRIB_URL="https://github.com/Itseez/opencv_contrib/archive/${OPENCV_VERSION}.zip"
-OPENCV_CONTRIB_PACKAGE_NAME="opencv_contrib-${OPENCV_VERSION}"
-
-PREFIX="${PREFIX:-/usr/local}"
-MAKEFLAGS="${MAKEFLAGS:--j 4}"
-
-install_build_dependencies() {
-    local build_packages="build-essential git cmake pkg-config"
-    local image_io_packages="libjpeg-dev libtiff5-dev libjasper-dev \
-                             libpng12-dev"
-    local video_io_packages="libavcodec-dev libavformat-dev \
-                             libswscale-dev libv4l-dev \
-                             libxvidcore-dev libx264-dev"
-    local gtk_packages="libgtk2.0-dev"
-    local matrix_packages="libatlas-base-dev gfortran"
-    local python_dev_packages="python2.7-dev python3-dev python-pip python3-pip"
-    local build_packages="cmake"
-
-    sudo apt-get install -y $build_packages $image_io_packages $gtk_packages \
-                       $video_io_packages $matrix_packages $python_dev_packages $build_packages
-}
-
-install_global_python_dependencies() {
-    sudo pip install virtualenv virtualenvwrapper
-}
-
-install_local_python_dependences() {
-    pip install numpy
-}
-
-download_packages() {
-    wget -c -O "${OPENCV_PACKAGE_NAME}.zip" "$OPENCV_URL"
-    wget -c -O "${OPENCV_CONTRIB_PACKAGE_NAME}.zip" "$OPENCV_CONTRIB_URL"
-}
-
-unpack_packages() {
-    # unzip args:
-    # -q = quiet
-    # -n = never overwrite existing files
-    unzip -q -n "${OPENCV_PACKAGE_NAME}.zip"
-    unzip -q -n "${OPENCV_CONTRIB_PACKAGE_NAME}.zip"
-}
-
-setup_virtualenv() {
-    export WORKON_HOME="$HOME/.virtualenvs"
-    source /usr/local/bin/virtualenvwrapper.sh
-    mkvirtualenv -p python3 cv
-    workon cv
-    install_local_python_dependences
-}
-
-build() {
-    cmake -D CMAKE_BUILD_TYPE=RELEASE \
-          -D CMAKE_INSTALL_PREFIX="$PREFIX" \
-          -D INSTALL_C_EXMAPLES=ON \
-          -D INSTALL_PYTHON_EXAMPLES=ON \
-          -D OPENCV_EXTRA_MODULES_PATH="$HOME/$OPENCV_CONTRIB_PACKAGE_NAME/modules" \
-          -D BUILD_EXAMPLES=ON \
-          ..
-    make ${MAKEFLAGS}
-}
-
-install() {
-    sudo make install
-    sudo ldconfig
-}
-
-log() {
-    local msg="$1"; shift
-    local _color_bold_yellow='\e[1;33m'
-    local _color_reset='\e[0m'
-    echo -e "\[${_color_bold_yellow}\]${msg}\[${_color_reset}\]"
-}
-
-main() {
-    log "Installing build dependencies..."
-    install_build_dependencies
-    log "Downloading OpenCV packages..."
-    download_packages
-    log "Unpacking OpenCV packages..."
-    unpack_packages
-    log "Installing global python deps..."
-    install_global_python_dependencies
-    log "Setting up local python environment..."
-    setup_virtualenv
-    log "Building OpenCV..."
-
-    cd "$OPENCV_PACKAGE_NAME"
-    mkdir build
-    cd build
-
-    build
-    echo "Installing OpenCV..."
-    install
-}
-
-main
+cd ~
+wget https://github.com/opencv/opencv/archive/3.4.0.zip -O opencv_source.zip
+wget https://github.com/opencv/opencv_contrib/archive/3.4.0.zip -O opencv_contrib.zip
+unzip opencv_source.zip
+unzip opencv_contrib.zip
+cd opencv-3.4.0
+mkdir build
+cd build
+cmake -D CMAKE_BUILD_TYPE=RELEASE \
+	-D CMAKE_INSTALL_PREFIX=/usr/local \
+	-D BUILD_WITH_DEBUG_INFO=OFF \
+	-D BUILD_DOCS=OFF \
+	-D BUILD_EXAMPLES=OFF \
+	-D BUILD_TESTS=OFF \
+	-D BUILD_opencv_ts=OFF \
+	-D BUILD_PERF_TESTS=OFF \
+	-D INSTALL_C_EXAMPLES=ON \
+	-D INSTALL_PYTHON_EXAMPLES=OFF \
+	-D OPENCV_EXTRA_MODULES_PATH=../../opencv_contrib-3.4.0/modules \
+	-D ENABLE_NEON=ON \
+	-D WITH_LIBV4L=ON \
+	-D WITH_OPENGL=ON \
+        ../
