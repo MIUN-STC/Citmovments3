@@ -21,7 +21,6 @@ sudo modprobe bcm2835-v4l2
 sudo apt-get -y install libatlas-base-dev gfortran
 sudo apt-get -y install libgtkglext1 libgtkglext1-dev
 
-cd ~
 wget https://github.com/opencv/opencv/archive/3.4.0.zip -O opencv_source.zip
 wget https://github.com/opencv/opencv_contrib/archive/3.4.0.zip -O opencv_contrib.zip
 unzip opencv_source.zip
@@ -44,3 +43,7 @@ cmake -D CMAKE_BUILD_TYPE=RELEASE \
 	-D WITH_LIBV4L=ON \
 	-D WITH_OPENGL=ON \
         ../
+
+make -j3
+sudo make install
+sudo ldconfig

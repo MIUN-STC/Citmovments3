@@ -44,8 +44,9 @@ int main (int argc, char * argv [])
    cv::Mat M3 (Lepton3_Height, Lepton3_Width, CV_8UC3);
    cv::Mat Foreground;
    
-   cv::namedWindow ("W1", CV_WINDOW_NORMAL);
-   cv::resizeWindow ("W1", Lepton3_Width, Lepton3_Height);
+   cv::namedWindow ("W1", CV_WINDOW_NORMAL | CV_WINDOW_OPENGL);
+   cv::setWindowProperty ("W1", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
+   //cv::resizeWindow ("W1", Lepton3_Width, Lepton3_Height);
 
    cv::SimpleBlobDetector::Params Params;
    Params.minThreshold = 200;
