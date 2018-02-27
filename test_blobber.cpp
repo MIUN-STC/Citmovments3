@@ -49,13 +49,13 @@ int main (int argc, char * argv [])
    //cv::resizeWindow ("W1", Lepton3_Width, Lepton3_Height);
 
    cv::SimpleBlobDetector::Params Params;
-   Params.minThreshold = 200;
+   Params.minThreshold = 60;
    Params.maxThreshold = 255;
-   Params.filterByColor = true;
-   Params.blobColor = 255;
+   Params.filterByColor = false;
+   Params.blobColor = 100;
    Params.filterByArea = true;
-   Params.minArea = 100;
-   Params.maxArea = 1000;
+   Params.minArea = 10;
+   Params.maxArea = 100;
    Params.filterByCircularity = false;
    Params.minCircularity = 0.1;
    Params.maxCircularity = 1.0;
@@ -85,6 +85,7 @@ int main (int argc, char * argv [])
       for (size_t I = 0; I < Keypoints.size (); I = I + 1)
       {
          char Buffer [128];
+         //sprintf (Buffer, "%f", Keypoints [I].response);
          sprintf (Buffer, "(%1.02f, %1.02f)", Keypoints [I].pt.x, Keypoints [I].pt.y);
          cv::putText (M3, Buffer, Keypoints [I].pt, CV_FONT_HERSHEY_SCRIPT_SIMPLEX, 0.3, cv::Scalar (0, 0, 255), 1);
       }
