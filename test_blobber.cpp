@@ -68,18 +68,18 @@ int main (int argc, char * argv [])
 	Params.maxInertiaRatio = 0.5;
 
 	cv::Ptr<cv::SimpleBlobDetector> Blobber = cv::SimpleBlobDetector::create (Params);
-	std::vector<cv::KeyPoint> Keypoints;
-	std::vector<cv::KeyPoint> Keypoints1 (4);
+	std::vector<cv::KeyPoint> Targets;
+	std::vector<cv::KeyPoint> Trackers (4);
 
 	cv::Ptr<cv::BackgroundSubtractor> Subtractor = cv::createBackgroundSubtractorMOG2 ();
 
 	cv::RNG rng (0xFFF1231);
 
-	for (size_t I = 0; I < Keypoints1.size (); I = I + 1)
+	for (size_t I = 0; I < Trackers.size (); I = I + 1)
 	{
-		Keypoints1 [I].class_id = I;
-		Keypoints1 [I].pt.x = rng.uniform (0, Lepton3_Width);
-		Keypoints1 [I].pt.y = rng.uniform (0, Lepton3_Height);
+		Trackers [I].class_id = I;
+		Trackers [I].pt.x = rng.uniform (0, Lepton3_Width);
+		Trackers [I].pt.y = rng.uniform (0, Lepton3_Height);
 	}
 
 
@@ -90,20 +90,30 @@ int main (int argc, char * argv [])
 		Subtractor->apply (M1, Foreground);
 		Foreground.convertTo (M2, CV_8U);
 		cv::GaussianBlur (M2, M2, cv::Size (11, 11), 3.5, 3.5);
-		Blobber->detect (M2, Keypoints);
+		Blobber->detect (M2, Targets);
 		cv::cvtColor (M2, M3, cv::COLOR_GRAY2BGR);
-		//cv::drawKeypoints (M2, Keypoints, M3, cv::Scalar (0, 100, 255), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+		//cv::drawTargets (M2, Targets, M3, cv::Scalar (0, 100, 255), cv::DrawMatchesFlags::DRAW_RICH_Targets);
 
 		
-		for (size_t I = 0; I < Keypoints.size (); I = I + 1)
+		for (size_t I = 0; I < Targets.size (); I = I + 1)
 		{
 			float Distance_Min = 10000;
 			float Distance;
 			ssize_t Index_Min = -1;
-			for (size_t J = 0; J < Keypoints1.size (); J = J + 1)
+			
+			//Find the closest tracker to the target and
+			//exchange information.
+			for (size_t J = 0; J < Trackers.size (); J = J + 1)
 			{
-				Distance = cv::norm (Keypoints1 [J].pt - Keypoints [I].pt);
-				if ((Keypoints1 [J].octave > 0) && (Distance > 10.0f)) {continue;};
+				Distance = cv::norm (Trackers [J].pt - Targets [I].pt);
+				
+				//It is very important to update used trackers also.
+				//If the tracker is being used then only track the target in proximity.
+				float Proximity = 10.0f;
+				if ((Trackers [J].octave > 0) && (Distance > Proximity)) {continue;};
+				
+				//The tracker is not used or
+				//The tracker is used and within proximity.
 				if (Distance < Distance_Min)
 				{
 					Distance_Min = Distance;
@@ -111,35 +121,41 @@ int main (int argc, char * argv [])
 				}
 			}
 			if (Index_Min == -1) {continue;};
-			Keypoints [I].class_id = Keypoints1 [Index_Min].class_id;
-			Keypoints1 [Index_Min].pt = Keypoints [I].pt;
 			
-			Keypoints1 [Index_Min].octave = 100;
+			//Exchange information.
+			Targets [I].class_id = Trackers [Index_Min].class_id;
+			Trackers [Index_Min].pt = Targets [I].pt;
+			
+			//Set the tracker tolerance (octave)
+			Trackers [Index_Min].octave = 100;
 		}
 
-		for (size_t I = 0; I < Keypoints1.size (); I = I + 1)
+
+		//Tracker that does not track will lose interest and 
+		//release it self to tracke other targets.
+		for (size_t I = 0; I < Trackers.size (); I = I + 1)
 		{
-			if (Keypoints1 [I].octave > 0) 
+			if (Trackers [I].octave > 0) 
 			{
-				Keypoints1 [I].octave -= 1;
+				Trackers [I].octave -= 1;
 			};
 		}
 		
 		
 		
 		
-		for (size_t I = 0; I < Keypoints1.size (); I = I + 1)
+		for (size_t I = 0; I < Trackers.size (); I = I + 1)
 		{
 			char Buffer [128];
-			sprintf (Buffer, "%d", Keypoints1 [I].class_id);
-			cv::putText (M3, Buffer, Keypoints1 [I].pt + cv::Point2f (-3.0f, 3.0f), CV_FONT_HERSHEY_SCRIPT_SIMPLEX, 0.4, cv::Scalar (0, 0, 255), 1);
-			cv::circle (M3, Keypoints1 [I].pt, 6.0f, cv::Scalar (0, 255, 0), 1);
+			sprintf (Buffer, "%d", Trackers [I].class_id);
+			cv::putText (M3, Buffer, Trackers [I].pt + cv::Point2f (-3.0f, 3.0f), CV_FONT_HERSHEY_SCRIPT_SIMPLEX, 0.4, cv::Scalar (0, 0, 255), 1);
+			cv::circle (M3, Trackers [I].pt, 6.0f, cv::Scalar (0, 255, 0), 1);
 		}
 
 
-		for (size_t I = 0; I < Keypoints.size (); I = I + 1)
+		for (size_t I = 0; I < Targets.size (); I = I + 1)
 		{
-			cv::circle (M3, Keypoints [I].pt, 6.0f, cv::Scalar (255, 0, 0), 1);
+			cv::circle (M3, Targets [I].pt, 6.0f, cv::Scalar (255, 0, 0), 1);
 		}
 
 		cv::imshow ("W1", M3);
