@@ -31,6 +31,61 @@ void Reciever (struct Lepton_Pixel_Grayscale16 * Pixmap)
 }
 
 
+void Persistent_Tracker 
+(
+	std::vector<cv::KeyPoint>& Targets,
+	std::vector<cv::KeyPoint>& Trackers,
+	float Proximity = 10.0f,
+	int Persistence = 100
+)
+{
+	for (size_t I = 0; I < Targets.size (); I = I + 1)
+	{
+		float Distance_Min = 10000;
+		float Distance;
+		ssize_t Index_Min = -1;
+		
+		//Find the closest tracker to the target and
+		//exchange information.
+		for (size_t J = 0; J < Trackers.size (); J = J + 1)
+		{
+			Distance = cv::norm (Trackers [J].pt - Targets [I].pt);
+			
+			//It is very important to update used trackers also.
+			//If the tracker is being used then only track the target in proximity.
+			if ((Trackers [J].octave > 0) && (Distance > Proximity)) {continue;};
+			
+			//The tracker is not used or
+			//The tracker is used and within proximity.
+			if (Distance < Distance_Min)
+			{
+				Distance_Min = Distance;
+				Index_Min = J;
+			}
+		}
+		if (Index_Min == -1) {continue;};
+		
+		//Exchange information.
+		Targets [I].class_id = Trackers [Index_Min].class_id;
+		Trackers [Index_Min].pt = Targets [I].pt;
+		
+		//Set the tracker tolerance (octave)
+		Trackers [Index_Min].octave = Persistence;
+	}
+
+
+	//Tracker that does not track will lose interest and 
+	//release it self to tracke other targets.
+	for (size_t I = 0; I < Trackers.size (); I = I + 1)
+	{
+		if (Trackers [I].octave > 0) 
+		{
+			Trackers [I].octave -= 1;
+		};
+	}
+}
+
+
 int main (int argc, char * argv [])
 {
 	Assert (argc == 1, "argc %i.", argc);
@@ -93,56 +148,8 @@ int main (int argc, char * argv [])
 		Blobber->detect (M2, Targets);
 		cv::cvtColor (M2, M3, cv::COLOR_GRAY2BGR);
 		//cv::drawTargets (M2, Targets, M3, cv::Scalar (0, 100, 255), cv::DrawMatchesFlags::DRAW_RICH_Targets);
-
 		
-		for (size_t I = 0; I < Targets.size (); I = I + 1)
-		{
-			float Distance_Min = 10000;
-			float Distance;
-			ssize_t Index_Min = -1;
-			
-			//Find the closest tracker to the target and
-			//exchange information.
-			for (size_t J = 0; J < Trackers.size (); J = J + 1)
-			{
-				Distance = cv::norm (Trackers [J].pt - Targets [I].pt);
-				
-				//It is very important to update used trackers also.
-				//If the tracker is being used then only track the target in proximity.
-				float Proximity = 10.0f;
-				if ((Trackers [J].octave > 0) && (Distance > Proximity)) {continue;};
-				
-				//The tracker is not used or
-				//The tracker is used and within proximity.
-				if (Distance < Distance_Min)
-				{
-					Distance_Min = Distance;
-					Index_Min = J;
-				}
-			}
-			if (Index_Min == -1) {continue;};
-			
-			//Exchange information.
-			Targets [I].class_id = Trackers [Index_Min].class_id;
-			Trackers [Index_Min].pt = Targets [I].pt;
-			
-			//Set the tracker tolerance (octave)
-			Trackers [Index_Min].octave = 100;
-		}
-
-
-		//Tracker that does not track will lose interest and 
-		//release it self to tracke other targets.
-		for (size_t I = 0; I < Trackers.size (); I = I + 1)
-		{
-			if (Trackers [I].octave > 0) 
-			{
-				Trackers [I].octave -= 1;
-			};
-		}
-		
-		
-		
+		Persistent_Tracker (Targets, Trackers);
 		
 		for (size_t I = 0; I < Trackers.size (); I = I + 1)
 		{
