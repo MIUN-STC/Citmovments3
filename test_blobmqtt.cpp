@@ -22,6 +22,17 @@
 
 
 
+struct CM_Tracker
+{
+	cv::Point2f P;
+	cv::Point2f D;
+	int Duration;
+	int Persistence;
+	int Id;
+};
+
+
+
 void Reciever (struct Lepton_Pixel_Grayscale16 * Pixmap)
 {
    size_t const Size = sizeof (struct Lepton_Pixel_Grayscale16 [Lepton3_Width * Lepton3_Height]);
@@ -33,7 +44,7 @@ void Reciever (struct Lepton_Pixel_Grayscale16 * Pixmap)
 void Persistent_Tracker 
 (
 	std::vector<cv::KeyPoint>& Targets,
-	std::vector<cv::KeyPoint>& Trackers,
+	std::vector<CM_Tracker>& Trackers,
 	float Proximity = 10.0f,
 	int Persistence = 100
 )
@@ -48,14 +59,11 @@ void Persistent_Tracker
 		//exchange information.
 		for (size_t J = 0; J < Trackers.size (); J = J + 1)
 		{
-			Distance = cv::norm (Trackers [J].pt - Targets [I].pt);
+			Distance = cv::norm (Trackers [J].P - Targets [I].pt);
 			
 			//It is very important to update used trackers also.
 			//If the tracker is being used then only track the target in proximity.
-			if ((Trackers [J].octave > 0) && (Distance > Proximity)) {continue;};
-			
-			//The tracker is not used or
-			//The tracker is used and within proximity.
+			if ((Trackers [J].Persistence > 0) && (Distance > Proximity)) {continue;};
 			if (Distance < Distance_Min)
 			{
 				Distance_Min = Distance;
@@ -64,15 +72,10 @@ void Persistent_Tracker
 		}
 		if (Index_Min == -1) {continue;};
 		
-		//Exchange information.
-		Targets [I].class_id = Trackers [Index_Min].class_id;
-		Trackers [Index_Min].pt = Targets [I].pt;
-		
-		//Set the tracker tolerance (octave)
-		Trackers [Index_Min].octave = Persistence;
-		
-		//Set the tracker duration
-		Trackers [Index_Min].response += 1.0f;
+		Trackers [Index_Min].D = Trackers [Index_Min].pt - Targets [I].pt;
+		Trackers [Index_Min].P = Targets [I].pt;
+		Trackers [Index_Min].Persistence = Persistence;
+		Trackers [Index_Min].Duration += 1.0f;
 	}
 
 
@@ -80,47 +83,14 @@ void Persistent_Tracker
 	//release it self to tracke other targets.
 	for (size_t I = 0; I < Trackers.size (); I = I + 1)
 	{
-		if (Trackers [I].octave > 0) 
+		if (Trackers [I].Persistence > 0) 
 		{
-			Trackers [I].octave -= 1;
+			Trackers [I].Persistence -= 1;
 		};
 	}
 }
 
 
-struct Triangle
-{
-	cv::Point2f P0;
-	cv::Point2f P1;
-	cv::Point2f P2;
-};
-
-bool Triangle_Contains_Point 
-(
-	cv::Point2f& P0,
-	cv::Point2f& P1,
-	cv::Point2f& P2,
-	cv::Point2f& P
-)
-{
-	float A = (1.0f/2.0f) * (-P1.y * P2.x + P0.y * (-P1.x + P2.x) + P0.x * (P1.y - P2.y) + P1.x * P2.y);
-	float Sign = A < 0 ? -1.0f : 1.0f;
-	float S = (P0.y * P2.x - P0.x * P2.y + (P2.y - P0.y) * P.x + (P0.x - P2.x) * P.y) * Sign;
-	float T = (P0.x * P1.y - P0.y * P1.x + (P0.y - P1.y) * P.x + (P1.x - P0.x) * P.y) * Sign;
-	return (S > 0) && (T > 0) && ((S + T) < (2 * A * Sign));
-}
-
-
-void Draw_Triangle 
-(
-	cv::Mat& Img,
-	struct Triangle& Tri
-)
-{
-	cv::line (Img, Tri.P0, Tri.P1, cv::Scalar (255, 255, 0));
-	cv::line (Img, Tri.P1, Tri.P2, cv::Scalar (255, 255, 0));
-	cv::line (Img, Tri.P2, Tri.P0, cv::Scalar (255, 255, 0));
-}
 
 
 struct CM_Counter
@@ -142,26 +112,26 @@ cv::Rect const CM_NE (Lepton3_Width - CM_Size, 0, CM_Size, CM_Size);
 cv::Rect const CM_SW (0, Lepton3_Height - CM_Size, CM_Size, CM_Size);
 cv::Rect const CM_SE (Lepton3_Width - CM_Size, Lepton3_Height - CM_Size, CM_Size, CM_Size);
 
-struct Triangle CM_NWN = {{0, 0}, {0, CM_Size}, {CM_Size, 0}};
 
 void Countman 
 (
-	std::vector<cv::KeyPoint>& Trackers,
+	std::vector<CM_Tracker>& Trackers,
 	struct CM_Counter& Counter
 )
 {
-	
-	
 	for (size_t I = 0; I < Trackers.size (); I = I + 1)
 	{
-		if (Trackers [I].octave == 1)
+		if (Trackers [I].Persistence == 1)
 		{
-			cv::Point2f P = Trackers [I].pt;
-			float Response = Trackers [I].response;
-			Trackers [I].response = 0;
+			cv::Point2f P = Trackers [I].P;
+			float Duration = Trackers [I].Duration;
+			Trackers [I].Duration = 0;
 			//printf ("P: %i %f %f\n", Trackers [I].class_id, P.x, P.y);
 			//printf ("P: %i %f\n", Trackers [I].class_id, Trackers [I].response);
-			if (Response < 30.0f){continue;}
+			if (Duration < 30.0f){continue;}
+			
+			
+			//printf ("P: %i %f\n", Trackers [I].class_id, (180.0f / M_PI) * Trackers [I].angle);
 			
 			if (0) {}
 			
@@ -169,66 +139,28 @@ void Countman
 			{
 				Counter.N ++;
 				printf ("N : %d\n", Counter.N);
-				Trackers [I].pt = {Lepton3_Width / 2.0f, Lepton3_Height/2.0f};
 			}
 			else if (CM_S.contains (P)) 
 			{
 				Counter.S ++;
 				printf ("S : %d\n", Counter.S);
-				Trackers [I].pt = {Lepton3_Width / 2.0f, Lepton3_Height/2.0f};
 			}
 			else if (CM_W.contains (P)) 
 			{
 				Counter.W ++;
 				printf ("W : %d\n", Counter.W);
-				Trackers [I].pt = {Lepton3_Width / 2.0f, Lepton3_Height/2.0f};
 			}
 			else if (CM_E.contains (P)) 
 			{
 				Counter.E ++;
 				printf ("E : %d\n", Counter.E);
-				Trackers [I].pt = {Lepton3_Width / 2.0f, Lepton3_Height/2.0f};
 			}
-
 			else if (CM_NE.contains (P)) 
 			{
-				//printf ("P: %i %f %f\n", Trackers [I].class_id, P.x, P.y);
-				if (P.y < (Lepton_Width - P.x))
-				{printf ("N Special\n");}
-				else
-				{printf ("E Special\n");}
+				
 			}
 			
-			else if (CM_NE.contains (P)) 
-			{
-				//printf ("P: %i %f %f\n", Trackers [I].class_id, P.x, P.y);
-				if (P.y < (Lepton_Width - P.x))
-				{
-					Counter.N ++;
-					printf ("N : %d\n", Counter.N);
-				}
-				else
-				{
-					Counter.E ++;
-					printf ("E : %d\n", Counter.E);
-				}
-			}
-			
-			else if (CM_NW.contains (P)) 
-			{
-				//printf ("P: %i %f %f\n", Trackers [I].class_id, P.x, P.y);
-				if (P.y < P.x)
-				{
-					Counter.N ++;
-					printf ("N : %d\n", Counter.N);
-				}
-				else
-				{
-					Counter.E ++;
-					printf ("E : %d\n", Counter.E);
-				}
-			}
-			
+			Trackers [I].P = {Lepton3_Width / 2.0f, Lepton3_Height/2.0f};
 		}
 	}
 }
@@ -271,7 +203,7 @@ int main (int argc, char * argv [])
 
 	cv::Ptr<cv::SimpleBlobDetector> Blobber = cv::SimpleBlobDetector::create (Params);
 	std::vector<cv::KeyPoint> Targets;
-	std::vector<cv::KeyPoint> Trackers (4);
+	std::vector<CM_Tracker> Trackers (4);
 
 	cv::Ptr<cv::BackgroundSubtractor> Subtractor = cv::createBackgroundSubtractorMOG2 ();
 
@@ -279,9 +211,9 @@ int main (int argc, char * argv [])
 
 	for (size_t I = 0; I < Trackers.size (); I = I + 1)
 	{
-		Trackers [I].class_id = I;
-		Trackers [I].pt.x = rng.uniform (0, Lepton3_Width);
-		Trackers [I].pt.y = rng.uniform (0, Lepton3_Height);
+		Trackers [I].Id = I;
+		Trackers [I].P.x = rng.uniform (0, Lepton3_Width);
+		Trackers [I].P.y = rng.uniform (0, Lepton3_Height);
 	}
 	
 	struct CM_Counter Counter = {0, 0, 0, 0};
@@ -307,9 +239,9 @@ int main (int argc, char * argv [])
 		for (size_t I = 0; I < Trackers.size (); I = I + 1)
 		{
 			char Buffer [128];
-			sprintf (Buffer, "%d", Trackers [I].class_id);
-			cv::putText (M3, Buffer, Trackers [I].pt + cv::Point2f (-3.0f, 3.0f), CV_FONT_HERSHEY_SCRIPT_SIMPLEX, 0.4, cv::Scalar (0, 0, 255), 1);
-			cv::circle (M3, Trackers [I].pt, 6.0f, cv::Scalar (0, 255, 0), 1);
+			sprintf (Buffer, "%d", Trackers [I].Id);
+			cv::putText (M3, Buffer, Trackers [I].P + cv::Point2f (-3.0f, 3.0f), CV_FONT_HERSHEY_SCRIPT_SIMPLEX, 0.4, cv::Scalar (0, 0, 255), 1);
+			cv::circle (M3, Trackers [I].P, 6.0f, cv::Scalar (0, 255, 0), 1);
 		}
 
 
@@ -317,6 +249,8 @@ int main (int argc, char * argv [])
 		{
 			cv::circle (M3, Targets [I].pt, 6.0f, cv::Scalar (255, 0, 0), 1);
 		}
+		
+		
 		cv::rectangle (M3, CM_N, cv::Scalar (255, 0, 255));
 		cv::rectangle (M3, CM_S, cv::Scalar (255, 0, 255));
 		cv::rectangle (M3, CM_W, cv::Scalar (255, 0, 255));
