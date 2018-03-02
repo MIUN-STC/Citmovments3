@@ -72,7 +72,7 @@ void Persistent_Tracker
 		}
 		if (Index_Min == -1) {continue;};
 		
-		Trackers [Index_Min].D = Trackers [Index_Min].pt - Targets [I].pt;
+		Trackers [Index_Min].D = Trackers [Index_Min].P - Targets [I].pt;
 		Trackers [Index_Min].P = Targets [I].pt;
 		Trackers [Index_Min].Persistence = Persistence;
 		Trackers [Index_Min].Duration += 1.0f;
@@ -181,7 +181,7 @@ int main (int argc, char * argv [])
 
 	cv::namedWindow ("W1", CV_WINDOW_NORMAL | CV_WINDOW_OPENGL);
 	//cv::setWindowProperty ("W1", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
-	cv::resizeWindow ("W1", Lepton3_Width*2, Lepton3_Height*2);
+	cv::resizeWindow ("W1", Lepton3_Width*5, Lepton3_Height*5);
 
 	cv::SimpleBlobDetector::Params Params;
 	Params.minThreshold = 60;
