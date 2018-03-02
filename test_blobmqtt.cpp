@@ -29,6 +29,7 @@ struct CM_Tracker
 	int Duration;
 	int Persistence;
 	int Id;
+	float Angle;
 };
 
 
@@ -72,7 +73,10 @@ void Persistent_Tracker
 		}
 		if (Index_Min == -1) {continue;};
 		
-		Trackers [Index_Min].D = Trackers [Index_Min].P - Targets [I].pt;
+		
+		Trackers [Index_Min].D = 0.9f * Trackers [Index_Min].D + (Targets [I].pt - Trackers [Index_Min].P) * 0.1f;
+		Trackers [Index_Min].Angle = atan2f (Trackers [Index_Min].D.y, Trackers [Index_Min].D.x);
+		
 		Trackers [Index_Min].P = Targets [I].pt;
 		Trackers [Index_Min].Persistence = Persistence;
 		Trackers [Index_Min].Duration += 1.0f;
@@ -121,47 +125,70 @@ void Countman
 {
 	for (size_t I = 0; I < Trackers.size (); I = I + 1)
 	{
-		if (Trackers [I].Persistence == 1)
+		//Check if the target has been gone for a while.
+		if (Trackers [I].Persistence != 1) {continue;}
+		
+		//Check if the target has been tracked for a while. 
+		float Duration = Trackers [I].Duration;
+		if (Duration < 30.0f){continue;}
+		Trackers [I].Duration = 0;
+		
+		//Flag variable for if the target has beed counted or not.
+		bool Counted = false;
+		
+		//Rename target position
+		cv::Point2f P = Trackers [I].P;
+		
+		//Angle of the targets direction in degrees.
+		float Angle = (180.0f / M_PI) * Trackers [I].Angle;
+		
+		//Check if the target is whithin the counting box.
+		if (0) {}
+		else if (CM_N.contains (P)) {Counter.N ++; Counted = true;}
+		else if (CM_S.contains (P)) {Counter.S ++; Counted = true;}
+		else if (CM_W.contains (P)) {Counter.W ++; Counted = true;}
+		else if (CM_E.contains (P)) {Counter.E ++; Counted = true;}
+		else if (CM_NE.contains (P)) 
 		{
-			cv::Point2f P = Trackers [I].P;
-			float Duration = Trackers [I].Duration;
-			Trackers [I].Duration = 0;
-			//printf ("P: %i %f %f\n", Trackers [I].class_id, P.x, P.y);
-			//printf ("P: %i %f\n", Trackers [I].class_id, Trackers [I].response);
-			if (Duration < 30.0f){continue;}
-			
-			
-			//printf ("P: %i %f\n", Trackers [I].class_id, (180.0f / M_PI) * Trackers [I].angle);
-			
-			if (0) {}
-			
-			else if (CM_N.contains (P)) 
-			{
-				Counter.N ++;
-				printf ("N : %d\n", Counter.N);
-			}
-			else if (CM_S.contains (P)) 
-			{
-				Counter.S ++;
-				printf ("S : %d\n", Counter.S);
-			}
-			else if (CM_W.contains (P)) 
-			{
-				Counter.W ++;
-				printf ("W : %d\n", Counter.W);
-			}
-			else if (CM_E.contains (P)) 
-			{
-				Counter.E ++;
-				printf ("E : %d\n", Counter.E);
-			}
-			else if (CM_NE.contains (P)) 
-			{
-				
-			}
-			
+			//Angle of departure in the corner.
+			if (Angle < -45.0f) {Counter.S ++;}
+			else {Counter.E ++;}
+			Counted = true;
+		}
+		else if (CM_SE.contains (P)) 
+		{
+			//Angle of departure in the corner.
+			if (Angle < 45.0f) {Counter.E ++;}
+			else {Counter.N ++;}
+			Counted = true;
+		}
+		else if (CM_NW.contains (P)) 
+		{
+			//Angle of departure in the corner.
+			if (Angle < 255.0f) {Counter.W ++;}
+			else {Counter.N ++;}
+			Counted = true;
+		}
+		else if (CM_SW.contains (P)) 
+		{
+			//Angle of departure in the corner.
+			if (Angle < 135.0f) {Counter.S ++;}
+			else {Counter.W ++;}
+			Counted = true;
+		}
+		
+		if (Counted)
+		{
+			printf ("ID    = %i\n", Trackers [I].Id);
+			printf ("Angle = %f\n", Angle);
+			printf ("N : %d\n", Counter.N);
+			printf ("S : %d\n", Counter.S);
+			printf ("W : %d\n", Counter.W);
+			printf ("E : %d\n", Counter.E);
+			printf ("\n");
 			Trackers [I].P = {Lepton3_Width / 2.0f, Lepton3_Height/2.0f};
 		}
+
 	}
 }
 
@@ -242,6 +269,7 @@ int main (int argc, char * argv [])
 			sprintf (Buffer, "%d", Trackers [I].Id);
 			cv::putText (M3, Buffer, Trackers [I].P + cv::Point2f (-3.0f, 3.0f), CV_FONT_HERSHEY_SCRIPT_SIMPLEX, 0.4, cv::Scalar (0, 0, 255), 1);
 			cv::circle (M3, Trackers [I].P, 6.0f, cv::Scalar (0, 255, 0), 1);
+			cv::line (M3, Trackers [I].P - (Trackers [I].D * 40.0f), Trackers [I].P + (Trackers [I].D * 40.0f), cv::Scalar (0, 255, 100));
 		}
 
 
