@@ -23,29 +23,31 @@
 #include "util.h"
 
 
-
-void Reciever (FILE * F, struct Lepton_Pixel_Grayscale16 * Pixmap)
+void Reciever (struct Lepton_Pixel_Grayscale16 * Pixmap)
 {
    size_t const Size = sizeof (struct Lepton_Pixel_Grayscale16 [Lepton3_Width * Lepton3_Height]);
-   int R = fread (Pixmap, Size, 1, F);
-   assert (R == 1);
+   int R = read (STDIN_FILENO, Pixmap, Size);
+   assert (R == Size);
 }
+
 
 int main (int argc, char * argv [])
 {
 	Assert (argc == 1, "argc %i.", argc);
 	Assert (argv[0] != NULL, "argv0 %p.", argv[0]);
 
-	//FILE * F = popen ("./test_grab", "r");
-	FILE * F = stdin;
-	//freopen ("log.txt", "w", stdout);
-	//freopen ("log_error.txt", "w", stderr);
+
 	bool Should_Run = true;
 
 	struct Lepton_Pixel_Grayscale16 Pixmap [Lepton3_Width * Lepton3_Height];
 	cv::Mat M1 (Lepton3_Height, Lepton3_Width, CV_16U, Pixmap);
 	cv::Mat M2 (Lepton3_Height, Lepton3_Width, CV_8UC1);
+	cv::Mat M3 (Lepton3_Height, Lepton3_Width, CV_8UC3);
 	cv::Mat Foreground;
+
+	cv::namedWindow ("W1", CV_WINDOW_NORMAL | CV_WINDOW_OPENGL);
+	//cv::setWindowProperty ("W1", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
+	cv::resizeWindow ("W1", Lepton3_Width*5, Lepton3_Height*5);
 
 	cv::SimpleBlobDetector::Params Params;
 	Params.minThreshold = 60;
@@ -83,22 +85,72 @@ int main (int argc, char * argv [])
 	struct CM_Counter Counter = {0, 0, 0, 0};
 	
 
-	printf ("Blobbington\n");
-	fflush (stdout);
-	
+
 	while (Should_Run)
 	{
 
-		Reciever (F, Pixmap);
-		//printf ("Rx\n");
-		//fflush (stdout);
+		Reciever (Pixmap);
 		Subtractor->apply (M1, Foreground);
 		Foreground.convertTo (M2, CV_8U);
 		cv::GaussianBlur (M2, M2, cv::Size (11, 11), 3.5, 3.5);
 		Blobber->detect (M2, Targets);
+		cv::cvtColor (M2, M3, cv::COLOR_GRAY2BGR);
+		//cv::drawTargets (M2, Targets, M3, cv::Scalar (0, 100, 255), cv::DrawMatchesFlags::DRAW_RICH_Targets);
 		
 		Persistent_Tracker (Targets, Trackers);
 		Countman (Trackers, Counter);
+		
+		
+		
+		for (size_t I = 0; I < Trackers.size (); I = I + 1)
+		{
+			char Buffer [128];
+			sprintf (Buffer, "%d", Trackers [I].Id);
+			cv::putText (M3, Buffer, Trackers [I].P + cv::Point2f (-3.0f, 3.0f), CV_FONT_HERSHEY_SCRIPT_SIMPLEX, 0.4, cv::Scalar (0, 0, 255), 1);
+			
+			if (Trackers [I].Persistence > 0)
+			{
+				cv::circle (M3, Trackers [I].P, 6.0f, cv::Scalar (0, 255, 0), 1);
+			}
+			
+			
+			cv::line (M3, Trackers [I].P - (Trackers [I].D * 40.0f), Trackers [I].P + (Trackers [I].D * 40.0f), cv::Scalar (0, 255, 100));
+		}
+
+
+		for (size_t I = 0; I < Targets.size (); I = I + 1)
+		{
+			cv::circle (M3, Targets [I].pt, 6.0f, cv::Scalar (255, 0, 0), 1);
+		}
+		
+		
+		cv::rectangle (M3, CM_N, cv::Scalar (255, 0, 255));
+		cv::rectangle (M3, CM_S, cv::Scalar (255, 0, 255));
+		cv::rectangle (M3, CM_W, cv::Scalar (255, 0, 255));
+		cv::rectangle (M3, CM_E, cv::Scalar (255, 0, 255));
+		
+		cv::rectangle (M3, CM_NE, cv::Scalar (255, 0, 255));
+		cv::rectangle (M3, CM_NW, cv::Scalar (255, 0, 255));
+		cv::rectangle (M3, CM_SE, cv::Scalar (255, 0, 255));
+		cv::rectangle (M3, CM_SW, cv::Scalar (255, 0, 255));
+		
+		cv::imshow ("W1", M3);
+
+		int Key = cv::waitKey (1);
+		if (Key == 'q') {Should_Run = false;};
+		if (Key == 'u') {Foreground = M1;}
+		
+		
+		if (Key == 'p') 
+		{
+			while (1) 
+			{
+				Key = cv::waitKey (1);
+				if (Key == 'p') {break;};
+			}
+		};
+		
+		
 	}
 	return 0;
 }
