@@ -27,7 +27,7 @@ void Reciever (struct Lepton_Pixel_Grayscale16 * Pixmap)
 {
    size_t const Size = sizeof (struct Lepton_Pixel_Grayscale16 [Lepton3_Width * Lepton3_Height]);
    int R = read (STDIN_FILENO, Pixmap, Size);
-   assert (R == Size);
+   Assert (R == Size, "read error. Readed %d of %d", R, Size);
 }
 
 

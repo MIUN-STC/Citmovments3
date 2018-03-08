@@ -1,65 +1,88 @@
 project Build is
 
-   for Languages use ("C", "C++");
-   --for Languages use ("C");
-   for Source_Dirs use (".");
-   for Object_Dir use "obj";
-   for Exec_Dir use ".";
-   for Main use ("test_grab.c", "test_save.c", "test_blobber.cpp", "test_surfer.cpp", "test_render.c", "test_blobmqtt.cpp");
-   --for Main use ("test_grab.c", "test_save.c", "test_render.c", "test_render2.c", "test_render3.c", "test_mqtt.c", "test_v4l2.c", "test_particles.c", "test_particles2.c");
-   
-   package Builder is 
-   end Builder;
-   
-   package Compiler is
-      for Switches ("C") use 
-      (
-         "-Wno-missing-field-initializers",
-         "-Wno-missing-braces", 
-         "-Wno-error=unused-but-set-variable",
-         "-std=gnu11", 
-         "-fdiagnostics-color", 
-         "-Wall", 
-         "-Wextra", 
-         "-Wpedantic", 
-         --"-Wno-variadic-macros", --Does not help
-         "-Wshadow", 
-         "-Werror", 
-         "-Wshadow", 
-         "-march=native"
-      );
-      
+	for Languages use ("C", "C++");
+	for Source_Dirs use (".");
+	for Object_Dir use "obj";
+	for Exec_Dir use ".";
+	for Main use ("test_grab.c");
 
-      for Switches ("C++") use 
-      (
-         "-Wno-missing-field-initializers",
-         "-Wno-error=unused-but-set-variable",
-         "-std=c++11", 
-         "-fdiagnostics-color", 
-         "-Wall", 
-         "-Wextra", 
-         "-Wpedantic", 
-         --"-Wno-variadic-macros", --Does not help
-         "-Wshadow", 
-         "-Werror", 
-         "-Wshadow", 
-         "-march=native"
-      );
-   end Compiler;
-   
-   package Linker is
-      for Switches ("test_grab.c") use ("-lwiringPi");
-      for Switches ("test_blobber.cpp") use ("-lopencv_core", "-lopencv_highgui", "-lopencv_features2d", "-lopencv_imgproc", "-lopencv_video");
-      for Switches ("test_blobmqtt.cpp") use ("-lopencv_core", "-lopencv_highgui", "-lopencv_features2d", "-lopencv_imgproc", "-lopencv_video");
-      for Switches ("test_surfer.cpp") use ("-lopencv_core", "-lopencv_highgui", "-lopencv_features2d", "-lopencv_xfeatures2d", "-lopencv_imgproc", "-lopencv_video");
-      for Switches ("test_render.c") use ("-lSDL2", "-lm", "-lSDL2_ttf", "-lSDL2_image");
-      for Switches ("test_render2.c") use ("-lSDL2", "-lm", "-lSDL2_ttf", "-lSDL2_image");
-      for Switches ("test_render3.c") use ("-lSDL2", "-lm", "-lSDL2_ttf", "-lSDL2_image");
-      for Switches ("test_particles.c") use ("-lSDL2", "-lm", "-lSDL2_ttf", "-lSDL2_image");
-      for Switches ("test_particles2.c") use ("-lSDL2", "-lm", "-lSDL2_ttf", "-lSDL2_image");
-      for Switches ("test_mqtt.c") use ("-lmosquitto");
-   end Linker;
-   
-   --// g++ test_blobber.cpp -lopencv_core -lopencv_highgui -lopencv_features2d -lopencv_imgproc -lopencv_video -o blobber && ./grab | ./blobber
-   
+	My_Files := 
+	(
+		"test_grab.c", 
+		--"test_save.c", 
+		--"test_render.c", 
+		--"test_render2.c", 
+		--"test_render3.c", 
+		--"test_mqtt.c", 
+		--"test_v4l2.c", 
+		--"test_particles.c", 
+		--"test_particles2.c",
+		--"test_snapshot.c",
+		--"test_blobmqtt.cpp",
+		"test_blobvisual.cpp",
+		"default.c"
+	);
+	
+	for Main use My_Files;
+	for Source_Files use My_Files;
+	
+	
+	package Builder is 
+	end Builder;
+
+	package Compiler is
+	for Switches ("C") use 
+	(
+		"-Wno-error=unused-function",
+		"-Wno-missing-field-initializers",
+		"-Wno-missing-braces", 
+		"-Wno-error=unused-but-set-variable",
+		"-std=gnu11", 
+		"-fdiagnostics-color", 
+		"-Wall", 
+		"-Wextra", 
+		"-Wpedantic", 
+		--"-Wno-variadic-macros", --Does not help
+		"-Wshadow", 
+		"-Werror", 
+		"-Wshadow", 
+		"-march=native"
+	);
+
+
+	for Switches ("C++") use 
+	(
+		"-Wno-missing-field-initializers",
+		"-Wno-error=unused-but-set-variable",
+		"-std=c++11", 
+		"-fdiagnostics-color", 
+		"-Wall", 
+		"-Wextra", 
+		"-Wpedantic", 
+		--"-Wno-variadic-macros", --Does not help
+		"-Wshadow", 
+		"-Werror", 
+		"-Wshadow", 
+		"-march=native"
+	);
+	end Compiler;
+
+	package Linker is
+		for Switches ("test_grab.c") use ("-lwiringPi");
+		for Switches ("test_blobber.cpp") use ("-lopencv_core", "-lopencv_highgui", "-lopencv_features2d", "-lopencv_imgproc", "-lopencv_video");
+		for Switches ("test_blobmqtt.cpp") use ("-lopencv_core", "-lopencv_highgui", "-lopencv_features2d", "-lopencv_imgproc", "-lopencv_video");
+		for Switches ("test_blobvisual.cpp") use ("-lopencv_core", "-lopencv_highgui", "-lopencv_features2d", "-lopencv_imgproc", "-lopencv_video");
+		for Switches ("test_surfer.cpp") use ("-lopencv_core", "-lopencv_highgui", "-lopencv_features2d", "-lopencv_xfeatures2d", "-lopencv_imgproc", "-lopencv_video");
+		for Switches ("test_render.c") use ("-lSDL2", "-lm", "-lSDL2_ttf", "-lSDL2_image");
+		for Switches ("test_render2.c") use ("-lSDL2", "-lm", "-lSDL2_ttf", "-lSDL2_image");
+		for Switches ("test_render3.c") use ("-lSDL2", "-lm", "-lSDL2_ttf", "-lSDL2_image");
+		for Switches ("test_saveimg.c") use ("-lSDL2", "-lm", "-lSDL2_ttf", "-lSDL2_image");
+		for Switches ("test_snapshot.c") use ("-lSDL2", "-lm", "-lSDL2_ttf", "-lSDL2_image");
+		for Switches ("test_particles.c") use ("-lSDL2", "-lm", "-lSDL2_ttf", "-lSDL2_image");
+		for Switches ("test_particles2.c") use ("-lSDL2", "-lm", "-lSDL2_ttf", "-lSDL2_image");
+		for Switches ("test_mqtt.c") use ("-lmosquitto");
+	end Linker;
+
+	--// g++ test_blobber.cpp -lopencv_core -lopencv_highgui -lopencv_features2d -lopencv_imgproc -lopencv_video -o blobber && ./grab | ./blobber
+
 end Build;

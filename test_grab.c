@@ -90,7 +90,7 @@ void Interrupt_Handle ()
    Result = Lepton_Stream_Accept (SPI_Device, Pixmap);
    
    //Wait for 4th segment to arrive. 
-   //By then all 4 segment of the pixmap frame is received.
+   //By then, all 4 segment of the pixmap frame should be received.
    if (Result != 4) {return;}
    
    //Frame received succesfully so reset Safe_Counter.
@@ -138,10 +138,12 @@ int main (int argc, char * argv [])
 	//signal (SIGPIPE, Signal_Handler);
 
 	//I2C comm is used for setting/getting the camera registers.
+	Log ("Open %s", "/dev/i2c-1");
 	I2C_Device = Lepton_I2C_Open ("/dev/i2c-1");
 	Reboot (I2C_Device);
 	
 	//SPI comm is only used for receiving frames.
+	Log ("Open %s", "/dev/spidev0.0");
 	SPI_Device = Lepton_SPI_Open ("/dev/spidev0.0");
 	Setup_wiringPi ();
 	
@@ -156,7 +158,7 @@ int main (int argc, char * argv [])
 		if (Safe_Counter > 3)
 		{
 			Safe_Counter = 0;
-			Log ("Camera has gone haywire! Rebooting now to fix the problem. I2C_Device = %d.", I2C_Device);
+			Log ("Lepton device (%d): Camera has gone haywire! Rebooting now to fix the problem", I2C_Device);
 			Reboot (I2C_Device);
 		}
 	}
