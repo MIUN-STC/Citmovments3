@@ -11,7 +11,7 @@ struct CM_Tracker
 	cv::Point2f P;
 	
 	//Delta position
-	//Can be used to calculate the angle of speed direction.
+	//Can be used to calculate the angle of delta position.
 	cv::Point2f D;
 	
 	//Angle of delta position.
@@ -27,7 +27,7 @@ struct CM_Tracker
 	// Max        : Tracker has a target and is tracking.
 	//Can be used to check if the target has actually left the premise.
 	//Can be used to update the model according to different states.
-	//Can be used to smooth the state beetween target existance and non existance (rounding up to state existing).
+	//Can be used to smooth the state beetween existing target and non existing target (rounding up to state existing target).
 	int Persistence;
 	
 	//Why do we need this?
@@ -39,10 +39,18 @@ struct CM_Tracker
 };
 
 
+//Producing a continuous coordinate attached to persistent ID.
 void Persistent_Tracker 
 (
+	//Input
+	//Discontinuous coordinate of interest.
 	std::vector<cv::KeyPoint>& Targets,
+	
+	//Output
+	//Continuous coordinate attached to persistent ID
 	std::vector<CM_Tracker>& Trackers,
+	
+	//Settings
 	float Proximity = 10.0f,
 	int Persistence = 100
 )
@@ -100,6 +108,7 @@ void Persistent_Tracker
 }
 
 
+//People count information for North, South, West, East.
 struct CM_Counter
 {
 	size_t N;
@@ -108,22 +117,35 @@ struct CM_Counter
 	size_t E;
 };
 
+
+//Size of the boxes for counting people.
 size_t const CM_Size = 10;
+
+
+//Setup edge boxes dimension and coordinate for counting people.
 cv::Rect const CM_N (CM_Size, 0, Lepton3_Width - (CM_Size*2), CM_Size);
 cv::Rect const CM_S (CM_Size, Lepton3_Height - CM_Size, Lepton3_Width - (CM_Size*2), CM_Size);
 cv::Rect const CM_W (0, CM_Size, CM_Size, Lepton3_Height - (CM_Size*2));
 cv::Rect const CM_E (Lepton3_Width - CM_Size, CM_Size, CM_Size, Lepton3_Height - (CM_Size*2));
 
+
+//Setup corner boxes dimension and coordinate for counting people.
 cv::Rect const CM_NW (0, 0, CM_Size, CM_Size);
 cv::Rect const CM_NE (Lepton3_Width - CM_Size, 0, CM_Size, CM_Size);
 cv::Rect const CM_SW (0, Lepton3_Height - CM_Size, CM_Size, CM_Size);
 cv::Rect const CM_SE (Lepton3_Width - CM_Size, Lepton3_Height - CM_Size, CM_Size, CM_Size);
 
 
-
+//Count people procedure.
+//Using the boxes to check intersection of the trackers.
 void Countman 
 (
+	//Input
+	//Tracker as information about the target that is going to be useful to count people.
 	std::vector<CM_Tracker>& Trackers,
+	
+	//Output
+	//Result of counted people. 
 	struct CM_Counter& Counter
 )
 {

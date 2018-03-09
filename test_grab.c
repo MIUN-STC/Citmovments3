@@ -87,9 +87,7 @@ void Reboot (int Device)
 void Interrupt_Handle ()
 {
    int32_t Result;
-   Result = Lepton_Stream_Accept (SPI_Device, Pixmap);
-   
-   //Wait for 4th segment to arrive. 
+   Result = Lepton_Stream_Accept (SPI_Device, Pixmap);  
    //By then, all 4 segment of the pixmap frame should be received.
    if (Result != 4) {return;}
    
@@ -133,7 +131,7 @@ int main (int argc, char * argv [])
 
 
 	//Ignore SIGPIPE interrupt.
-	//SIGPIPE interrupt can happen when the reading end of the pipe closes.
+	//SIGPIPE interrupt can happen when the reading end of the pipe closes while pipe is being written to.
 	signal (SIGPIPE, SIG_IGN);
 	//signal (SIGPIPE, Signal_Handler);
 
@@ -143,6 +141,8 @@ int main (int argc, char * argv [])
 	Reboot (I2C_Device);
 	
 	//SPI comm is only used for receiving frames.
+	//SPI should only receive on v-sync interrupt.
+	//wiringPi is used to setup interrupt from FLIR Lepton GPIO3 v-sync.
 	Log ("Open %s", "/dev/spidev0.0");
 	SPI_Device = Lepton_SPI_Open ("/dev/spidev0.0");
 	Setup_wiringPi ();
