@@ -58,8 +58,10 @@ void Application_Init (struct Application * App)
 	App->Min = UINT16_MAX;
 	App->Max = 0;
 	
+	Log ("SDL_Init %s", "");
     Assert (SDL_Init (SDL_INIT_VIDEO) == 0, "%s", "SDL_Init failed");
 	
+	Log ("SDL_CreateWindow %s", "");
 	App->Window = SDL_CreateWindow 
 	(
 		"Pixmap Renderer", 
