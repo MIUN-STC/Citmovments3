@@ -55,7 +55,7 @@ static inline void Util_Log
 	va_list Ap;
 	va_start (Ap, Format);
 	fprintf (stderr, "" ANSIC (ANSIC_Bold  , ANSIC_Yellow , ANSIC_Black) "%04d. "      ANSIC_Default ""  , Uniqid);
-	fprintf (stderr, "" ANSIC (ANSIC_Bold  , ANSIC_White  , ANSIC_Black) "%s:%d"       ANSIC_Default ": ", File_Name, Line);
+	fprintf (stderr, "" ANSIC (ANSIC_Bold  , ANSIC_White  , ANSIC_Black) "%s:%04d"       ANSIC_Default ": ", File_Name, Line);
 	fprintf (stderr, "" ANSIC (ANSIC_Normal, ANSIC_Magenta, ANSIC_Black) "runtime log: " ANSIC_Default "");
 	vfprintf (stderr, Format, Ap);
 	fprintf (stderr, "\n");

@@ -8,6 +8,7 @@
 #include "../Lepton/Lepton_I2C.h"
 #include "../Lepton/Lepton_Strings.h"
 #include "../Lepton/Lepton_Stream.h"
+#include "../Lepton/Lepton_Endian.h"
 
 //printf
 #include <stdio.h>
@@ -62,6 +63,110 @@ void Enable_Vsync (int Device, int Micro_Sleep, size_t Trial_Count)
 }
 
 
+void Disable_FFC (int Device, int Micro_Sleep, size_t Trial_Count)
+{
+	struct Lepton_I2C_Shutter_Mode Mode;
+	int Stage = 0;
+	uint16_t Status;
+	
+	
+	for (size_t I = 0; I < Trial_Count; I = I + 1)
+	{
+		Log ("Lepton_I2C_Execute Lepton_I2C_Command_FFC_Mode_Get. Try %i.", (int) I);
+		Lepton_I2C_Execute 
+		(
+			Device, 
+			Lepton_I2C_Command_FFC_Mode_Get, 
+			(void *) &Mode,
+			sizeof (struct Lepton_I2C_Shutter_Mode),
+			&(Status),
+			&(Stage)
+		);
+		char Buffer [17] = {'\0'};
+		Lepton_Strings_Base_Converter (be16toh (Status), Buffer, 16, 2);
+		Log ("Lepton device (%d): status = %16s", Device, Buffer);
+		if (Stage != 0)
+		{
+			usleep (Micro_Sleep);
+			continue;
+		} 
+		Lepton_Endian_be16tohv (sizeof (struct Lepton_I2C_Shutter_Mode) / sizeof (uint16_t), (uint16_t *) &Mode);
+		break;
+	}
+	
+	Log ("%-40s : %010zu", "Shutter_Mode", (uint32_t) Mode.Shutter_Mode);
+	Log ("%-40s : %010zu", "Temp_Lockout_State", (uint32_t) Mode.Temp_Lockout_State);
+	Log ("%-40s : %010zu", "Video_Freeze_During_FFC", (uint32_t) Mode.Video_Freeze_During_FFC);
+	Log ("%-40s : %010zu", "FFC_Desired", (uint32_t) Mode.FFC_Desired);
+	Log ("%-40s : %010zu", "Elapsed_Time_Since_Last_FFC", (uint32_t) Mode.Elapsed_Time_Since_Last_FFC);
+	Log ("%-40s : %010zu", "Desired_FFC_Period", (uint32_t) Mode.Desired_FFC_Period);
+	Log ("%-40s : %010zu", "Explicit_Command_To_Open", (uint32_t) Mode.Explicit_Command_To_Open);
+	Log ("%-40s : %010i", "Desired_FFC_Temp_Delta", (uint16_t) Mode.Desired_FFC_Temp_Delta);
+	Log ("%-40s : %010i", "Imminent_Delay", (uint16_t) Mode.Imminent_Delay);
+	
+	//Disable shutter
+	Mode.Shutter_Mode = 0;
+	
+	for (size_t I = 0; I < Trial_Count; I = I + 1)
+	{
+		Log ("Lepton_I2C_Execute Lepton_I2C_Command_FFC_Mode_Set. Try %i", (int) I);
+		Lepton_I2C_Execute 
+		(
+			Device, 
+			Lepton_I2C_Command_FFC_Mode_Set, 
+			(void *) &Mode,
+			sizeof (struct Lepton_I2C_Shutter_Mode),
+			&(Status),
+			&(Stage)
+		);
+		char Buffer [17] = {'\0'};
+		Lepton_Strings_Base_Converter (be16toh (Status), Buffer, 16, 2);
+		Log ("Lepton device (%d): status = %16s", Device, Buffer);
+		if (Stage != 0)
+		{
+			usleep (Micro_Sleep);
+			continue;
+		} 
+		Lepton_Endian_be16tohv (sizeof (struct Lepton_I2C_Shutter_Mode) / sizeof (uint16_t), (uint16_t *) &Mode);
+		break;
+	}
+	
+	
+	for (size_t I = 0; I < Trial_Count; I = I + 1)
+	{
+		Log ("Lepton_I2C_Execute Lepton_I2C_Command_FFC_Mode_Get. Try %i.", (int) I);
+		Lepton_I2C_Execute 
+		(
+			Device, 
+			Lepton_I2C_Command_FFC_Mode_Get, 
+			(void *) &Mode,
+			sizeof (struct Lepton_I2C_Shutter_Mode),
+			&(Status),
+			&(Stage)
+		);
+		char Buffer [17] = {'\0'};
+		Lepton_Strings_Base_Converter (be16toh (Status), Buffer, 16, 2);
+		Log ("Lepton device (%d): status = %16s", Device, Buffer);
+		if (Stage != 0)
+		{
+			usleep (Micro_Sleep);
+			continue;
+		} 
+		Lepton_Endian_be16tohv (sizeof (struct Lepton_I2C_Shutter_Mode) / sizeof (uint16_t), (uint16_t *) &Mode);
+		break;
+	}
+	
+	Log ("%-40s : %010zu", "Shutter_Mode", (uint32_t) Mode.Shutter_Mode);
+	Log ("%-40s : %010zu", "Temp_Lockout_State", (uint32_t) Mode.Temp_Lockout_State);
+	Log ("%-40s : %010zu", "Video_Freeze_During_FFC", (uint32_t) Mode.Video_Freeze_During_FFC);
+	Log ("%-40s : %010zu", "FFC_Desired", (uint32_t) Mode.FFC_Desired);
+	Log ("%-40s : %010zu", "Elapsed_Time_Since_Last_FFC", (uint32_t) Mode.Elapsed_Time_Since_Last_FFC);
+	Log ("%-40s : %010zu", "Desired_FFC_Period", (uint32_t) Mode.Desired_FFC_Period);
+	Log ("%-40s : %010zu", "Explicit_Command_To_Open", (uint32_t) Mode.Explicit_Command_To_Open);
+	Log ("%-40s : %010i", "Desired_FFC_Temp_Delta", (uint16_t) Mode.Desired_FFC_Temp_Delta);
+	Log ("%-40s : %010i", "Imminent_Delay", (uint16_t) Mode.Imminent_Delay);
+}
+
 void Reboot (int Device)
 {
 	int Status;
@@ -74,9 +179,14 @@ void Reboot (int Device)
 	Log ("Lepton device (%d): Rebooting", Device);
 	Lepton_I2C_Write_Command (Device, Lepton_I2C_Command_Reboot);
 	
-	Log ("Lepton device (%d): Enabling vsync", Device);
+	
 	sleep (3);
+	
+	Log ("Lepton device (%d): Enabling vsync", Device);
 	Enable_Vsync (Device, 10, 10);
+	
+	Log ("Lepton device (%d): Disabling FFC", Device);
+	Disable_FFC (Device, 10, 10);
 	
 	Status = Lepton_I2C_Status (Device);
 	Lepton_Strings_Base_Converter (be16toh (Status), Buffer, 16, 2);

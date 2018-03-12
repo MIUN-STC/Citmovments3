@@ -39,6 +39,8 @@ int main (int argc, char * argv [])
 
 	bool Should_Run = true;
 
+	//Use shared memory between Pixmap and M1.
+	//TODO: Rethink matrix variable name.
 	struct Lepton_Pixel_Grayscale16 Pixmap [Lepton3_Width * Lepton3_Height];
 	cv::Mat M1 (Lepton3_Height, Lepton3_Width, CV_16U, Pixmap);
 	cv::Mat M2 (Lepton3_Height, Lepton3_Width, CV_8UC1);
