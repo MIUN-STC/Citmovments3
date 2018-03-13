@@ -20,8 +20,9 @@ project Build is
 		--"test_snapshot.c",
 		--"test_blobmqtt.cpp",
 		--"test_blobvisual.cpp",
+		"test_cont.cpp",
 		--"test_lepton_i2c.c",
-		"test_multi_fifo.c",
+		--"test_multi_fifo.c",
 		"default.c"
 	);
 	
@@ -74,6 +75,7 @@ project Build is
 		for Switches ("test_blobber.cpp") use ("-lopencv_core", "-lopencv_highgui", "-lopencv_features2d", "-lopencv_imgproc", "-lopencv_video");
 		for Switches ("test_blobmqtt.cpp") use ("-lopencv_core", "-lopencv_highgui", "-lopencv_features2d", "-lopencv_imgproc", "-lopencv_video");
 		for Switches ("test_blobvisual.cpp") use ("-lopencv_core", "-lopencv_highgui", "-lopencv_features2d", "-lopencv_imgproc", "-lopencv_video");
+		for Switches ("test_cont.cpp") use ("-lopencv_core", "-lopencv_highgui", "-lopencv_features2d", "-lopencv_imgproc", "-lopencv_video");
 		for Switches ("test_surfer.cpp") use ("-lopencv_core", "-lopencv_highgui", "-lopencv_features2d", "-lopencv_xfeatures2d", "-lopencv_imgproc", "-lopencv_video");
 		for Switches ("test_render.c") use ("-lSDL2", "-lm", "-lSDL2_ttf", "-lSDL2_image");
 		for Switches ("test_render2.c") use ("-lSDL2", "-lm", "-lSDL2_ttf", "-lSDL2_image");
