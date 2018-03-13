@@ -8,7 +8,7 @@ project Build is
 
 	My_Files := 
 	(
-		"test_grab.c", 
+		--"test_grab.c", 
 		--"test_save.c", 
 		--"test_render.c", 
 		--"test_render2.c", 
@@ -19,7 +19,9 @@ project Build is
 		--"test_particles2.c",
 		--"test_snapshot.c",
 		--"test_blobmqtt.cpp",
-		"test_blobvisual.cpp",
+		--"test_blobvisual.cpp",
+		--"test_lepton_i2c.c",
+		"test_multi_fifo.c",
 		"default.c"
 	);
 	
@@ -31,40 +33,40 @@ project Build is
 	end Builder;
 
 	package Compiler is
-	for Switches ("C") use 
-	(
-		"-Wno-error=unused-function",
-		"-Wno-missing-field-initializers",
-		"-Wno-missing-braces", 
-		"-Wno-error=unused-but-set-variable",
-		"-std=gnu11", 
-		"-fdiagnostics-color", 
-		"-Wall", 
-		"-Wextra", 
-		"-Wpedantic", 
-		--"-Wno-variadic-macros", --Does not help
-		"-Wshadow", 
-		"-Werror", 
-		"-Wshadow", 
-		"-march=native"
-	);
+		for Switches ("C") use 
+		(
+			"-Wno-error=unused-function",
+			"-Wno-missing-field-initializers",
+			"-Wno-missing-braces", 
+			"-Wno-error=unused-but-set-variable",
+			"-std=gnu11", 
+			"-fdiagnostics-color", 
+			"-Wall", 
+			"-Wextra", 
+			"-Wpedantic", 
+			--"-Wno-variadic-macros", --Does not help
+			"-Wshadow", 
+			"-Werror", 
+			"-Wshadow", 
+			"-march=native"
+		);
 
 
-	for Switches ("C++") use 
-	(
-		"-Wno-missing-field-initializers",
-		"-Wno-error=unused-but-set-variable",
-		"-std=c++11", 
-		"-fdiagnostics-color", 
-		"-Wall", 
-		"-Wextra", 
-		"-Wpedantic", 
-		--"-Wno-variadic-macros", --Does not help
-		"-Wshadow", 
-		"-Werror", 
-		"-Wshadow", 
-		"-march=native"
-	);
+		for Switches ("C++") use 
+		(
+			"-Wno-missing-field-initializers",
+			"-Wno-error=unused-but-set-variable",
+			"-std=c++11", 
+			"-fdiagnostics-color", 
+			"-Wall", 
+			"-Wextra", 
+			"-Wpedantic", 
+			--"-Wno-variadic-macros", --Does not help
+			"-Wshadow", 
+			"-Werror", 
+			"-Wshadow", 
+			"-march=native"
+		);
 	end Compiler;
 
 	package Linker is

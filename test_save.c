@@ -34,16 +34,14 @@
 //Creates a file.
 //The filename will be a timestamp.
 //The data being written to the file is compressed by gzip.
-//Prints the command executed by popen.
-//Returns the newly created file object.
 FILE * Opener ()
 {
-   char const Format [] = "gzip - > sample_%04d_%02d_%02d_%02d_%02d_%02d.gz\n";
+   char const Format [] = "gzip - > sample_%04d_%02d_%02d_%02d_%02d_%02d.gz";
    char Buffer [128];
    time_t Seconds = time (0);
    struct tm * Local = localtime (&Seconds);
    sprintf (Buffer, Format, 1900 + Local->tm_year, Local->tm_mon + 1, Local->tm_mday, Local->tm_hour, Local->tm_min, Local->tm_sec);
-   printf (Buffer);
+   Log ("%s", Buffer);
    FILE * Pipe;
    Pipe = popen (Buffer, "w");
    Assert (Pipe != NULL, "%s", "popen");
@@ -69,10 +67,8 @@ void Delegate (FILE * File)
 
 
 //Converts string to long.
-//Checks for error and prints them.
-//Prints successful value.
 //Returns converted value long range 1 .. LONG_MAX.
-long User_Input1 (char * Input)
+long User_Input1 (char const * Input)
 {
    char * End;
    long Value;
@@ -88,37 +84,36 @@ long User_Input1 (char * Input)
 
 int main (int argc, char * argv [])
 { 
-   Assert (argc == 2, "%s", "Missing one argument period.\n");
-   
-   int Timer;
-   Timer = timerfd_create (CLOCK_MONOTONIC, TFD_NONBLOCK);
-   Assert (Timer > 0, "%s", "timerfd_create\n");
-   
-   //Configure the timer, phase and frequency.
-   struct itimerspec Spec;
-   Spec.it_interval.tv_sec = User_Input1 (argv [1]);
-   Spec.it_interval.tv_nsec = 0;
-   Spec.it_value.tv_sec = Spec.it_interval.tv_sec;
-   Spec.it_value.tv_nsec = Spec.it_interval.tv_nsec;
-   
-   {
-      int R = timerfd_settime (Timer, 0, &Spec, NULL);
-      Assert (R == 0, "%s", "timerfd_settime\n");
-   }
-   
-   FILE * Pipe = NULL;
-   Pipe = Opener ();
-   
-   while (1)
-   {
-      uint64_t N;
-      int R = read (Timer, &N, sizeof (N));
-      //Periodicly close and open.
-      if (R == sizeof (N))
-      { 
-         pclose (Pipe);
-         Pipe = Opener ();
-      }
-      Delegate (Pipe);
-   }
+	Assert (argc == 2, "%s", "Missing one argument period.\n");
+
+	int Timer;
+	Timer = timerfd_create (CLOCK_MONOTONIC, TFD_NONBLOCK);
+	Assert (Timer > 0, "%s", "timerfd_create\n");
+
+	//Configure the timer, period and offset.
+	{
+		struct itimerspec Spec;
+		Spec.it_interval.tv_sec = User_Input1 (argv [1]);
+		Spec.it_interval.tv_nsec = 0;
+		Spec.it_value.tv_sec = Spec.it_interval.tv_sec;
+		Spec.it_value.tv_nsec = Spec.it_interval.tv_nsec;
+		int R = timerfd_settime (Timer, 0, &Spec, NULL);
+		Assert (R == 0, "%s", "timerfd_settime\n");
+	}
+
+	FILE * Pipe = NULL;
+	Pipe = Opener ();
+
+	while (1)
+	{
+		uint64_t N;
+		int R = read (Timer, &N, sizeof (N));
+		Delegate (Pipe);
+		//Periodicly close and open.
+		if (R == sizeof (N))
+		{ 
+			pclose (Pipe);
+			Pipe = Opener ();
+		}
+	}
 }

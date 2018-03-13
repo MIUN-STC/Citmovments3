@@ -45,15 +45,18 @@ int Lep_Execute
 	size_t Trial_Count
 )
 {
-	int Stage = 0;
-	uint16_t Status;
 	{
+		uint16_t Status;
 		char Buffer [17] = {'\0'};
+		Status = Lepton_I2C_Status (Device);
 		Lepton_Strings_Base_Converter (be16toh (Status), Buffer, 16, 2);
 		Log ("Lepton device (%d): status = %16s", Device, Buffer);
 	}
+	
 	for (size_t I = 0; I < Trial_Count; I = I + 1)
 	{
+		int Stage = 0;
+		uint16_t Status;
 		Log ("Lepton device (%d): execute command, trial %i", Device, (int) I);
 		Lepton_I2C_Execute 
 		(
@@ -164,7 +167,7 @@ void Reboot (int Device)
 			(void *) &Mode,
 			sizeof (Mode),
 			Micro_Sleep,
-			Trial_Count
+			Trial_Count 
 		);
 		if (!Result) {return;};
 		
@@ -221,6 +224,7 @@ void Setup_wiringPi ()
 }
 
 
+//Callback for signal pipe error.
 /*
 void Signal_Handler (int Number)
 {
