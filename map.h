@@ -3,7 +3,13 @@
 #include <float.h>
 #include <stdint.h>
 #include <math.h>
+#include <stdbool.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+//Linearly map (x) value from (A0 .. A1) to (B0 .. B1)
 int Map_Linear_int (int X, int A0, int A1, int B0, int B1)
 {
    //Crop
@@ -34,6 +40,7 @@ int Map_Linear_int (int X, int A0, int A1, int B0, int B1)
 }
 
 
+//Linearly map (x) value from (A0 .. A1) to (B0 .. B1)
 float Map_Linear_float 
 (
    float X, 
@@ -84,8 +91,8 @@ void Map_Linear_floatv
 void Map_Linear_u16v_floatv
 (
    size_t Count, 
-   uint16_t const Source [Count],
-   float Destination [Count],
+   uint16_t const Source [],
+   float Destination [],
    uint16_t A0, 
    uint16_t A1, 
    float B0, 
@@ -101,8 +108,8 @@ void Map_Linear_u16v_floatv
 void Map_Linear_u16v_u16v
 (
 	size_t Count,
-	uint16_t const Source [Count], 
-	uint16_t Destination [Count], 
+	uint16_t const Source [], 
+	uint16_t Destination [], 
 	uint16_t A0, 
 	uint16_t A1, 
 	float B0, 
@@ -279,9 +286,9 @@ void Random_Circle_XY_float
 void Subtract_floatv 
 (
 	size_t Dim, 
-	float const Left [Dim], 
-	float const Right [Dim], 
-	float Result [Dim]
+	float const Left [], 
+	float const Right [], 
+	float Result []
 )
 {
 	for (size_t I = 0; I < Dim; I = I + 1)
@@ -294,9 +301,9 @@ void Subtract_floatv
 void Add_floatv 
 (
 	size_t Dim, 
-	float const Left [Dim], 
-	float const Right [Dim], 
-	float Result [Dim]
+	float const Left [], 
+	float const Right [], 
+	float Result []
 )
 {
 	for (size_t I = 0; I < Dim; I = I + 1)
@@ -309,8 +316,8 @@ void Add_floatv
 float Dot_floatv 
 (
 	size_t Dim, 
-	float Left [Dim], 
-	float Right [Dim]
+	float Left [], 
+	float Right []
 )
 {
 	float Result;
@@ -325,9 +332,9 @@ float Dot_floatv
 void Divide_floatv_float_floatv 
 (
 	size_t Dim, 
-	float Value [Dim], 
+	float Value [], 
 	float Amount,
-	float Result [Dim]
+	float Result []
 )
 {
 	for (size_t I = 0; I < Dim; I = I + 1)
@@ -340,9 +347,9 @@ void Divide_floatv_float_floatv
 void Multiply_floatv_float_floatv 
 (
 	size_t Dim, 
-	float Value [Dim], 
+	float Value [], 
 	float Amount,
-	float Result [Dim]
+	float Result []
 )
 {
 	for (size_t I = 0; I < Dim; I = I + 1)
@@ -355,9 +362,9 @@ void Multiply_floatv_float_floatv
 void Random_Rectangle_floatv
 (
 	size_t Dim,
-	float Result [Dim],
-	float Min [Dim],
-	float Max [Dim]
+	float Result [],
+	float Min [],
+	float Max []
 )
 {
 	for (size_t I = 0; I < Dim; I = I + 1)
@@ -370,9 +377,9 @@ void Random_Rectangle_floatv
 void Random_Delta_Rectangle_floatv
 (
 	size_t Dim,
-	float Result [Dim],
-	float Min [Dim],
-	float Max [Dim]
+	float Result [],
+	float Min [],
+	float Max []
 )
 {
 	for (size_t I = 0; I < Dim; I = I + 1)
@@ -385,8 +392,8 @@ void Random_Delta_Rectangle_floatv
 void Random_Delta_Square_floatv
 (
 	size_t Dim,
-	float const Value [Dim],
-	float Result [Dim],
+	float const Value [],
+	float Result [],
 	float Amount
 )
 {
@@ -400,9 +407,9 @@ void Random_Delta_Square_floatv
 int Intersect_Rectangle_floatv
 (
 	size_t Dim,
-	float Value [Dim],
-	float Min [Dim],
-	float Max [Dim]
+	float Value [],
+	float Min [],
+	float Max []
 )
 {
 	for (size_t I = 0; I < Dim; I = I + 1)
@@ -419,10 +426,10 @@ int Intersect_Rectangle_floatv
 void Crop_Rectangle_floatv
 (
 	size_t Dim,
-	float Value [Dim],
-	float Result [Dim],
-	float Min [Dim],
-	float Max [Dim]
+	float Value [],
+	float Result [],
+	float Min [],
+	float Max []
 )
 {
 	for (size_t I = 0; I < Dim; I = I + 1)
@@ -435,10 +442,10 @@ void Crop_Rectangle_floatv
 void Mirror_Rectangle_floatv
 (
 	size_t Dim,
-	float Value [Dim],
-	float Result [Dim],
-	float Min [Dim],
-	float Max [Dim]
+	float Value [],
+	float Result [],
+	float Min [],
+	float Max []
 )
 {
 	for (size_t I = 0; I < Dim; I = I + 1)
@@ -446,3 +453,81 @@ void Mirror_Rectangle_floatv
 		Result [I] = Crop_float (Value [I], Min [I], Max [I]);
 	}
 }
+
+
+void Background_Subtraction_floatv 
+(
+	size_t Dim,
+	float const Input [],
+	float Foreground [],
+	float Background [],
+	float K,
+	bool Absolute
+)
+{
+	assert (K >= 0.0f);
+	assert (K <= 1.0f);
+	assert (Dim == 0 || Input != NULL);
+	assert (Dim == 0 || Foreground != NULL);
+	assert (Dim == 0 || Background != NULL);
+	
+	for (size_t I = 0; I < Dim; I = I + 1)
+	{
+		Foreground [I] = fabsf (Input [I] - Background [I]);
+		if (Absolute) {Foreground [I] = fabsf (Foreground [I]);}
+		Background [I] = (Background [I] * (1.0f - K)) + (Input [I] * K);
+	}
+}
+
+
+void Copy_floatv_u8v
+(
+	size_t Dim,
+	float const Source [],
+	uint8_t Destination []
+)
+{
+	assert (Dim == 0 || Source != NULL);
+	assert (Dim == 0 || Destination != NULL);
+	for (size_t I = 0; I < Dim; I = I + 1)
+	{
+		Destination [I] = Source [I];
+	}
+}
+
+
+void Copy_floatv_u16v 
+(
+	size_t Dim,
+	float const Source [],
+	uint16_t Destination []
+)
+{
+	assert (Dim == 0 || Source != NULL);
+	assert (Dim == 0 || Destination != NULL);
+	for (size_t I = 0; I < Dim; I = I + 1)
+	{
+		Destination [I] = (uint16_t) Source [I];
+	}
+}
+
+
+void Copy_u16v_floatv
+(
+	size_t Dim,
+	uint16_t const Source [],
+	float Destination []
+)
+{
+	assert (Dim == 0 || Source != NULL);
+	assert (Dim == 0 || Destination != NULL);
+	for (size_t I = 0; I < Dim; I = I + 1)
+	{
+		Destination [I] = (float) Source [I];
+	}
+}
+
+
+#ifdef __cplusplus
+}
+#endif

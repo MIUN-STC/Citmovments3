@@ -14,8 +14,6 @@
 #include <opencv2/features2d/features2d.hpp>
 #include <opencv2/video/background_segm.hpp>
 
-#include "CM.hpp"
-
 #include "../Lepton/Lepton.h"
 #include "../Lepton/Lepton_Pixels.h"
 
@@ -31,6 +29,18 @@ void Reciever (struct Lepton_Pixel_Grayscale16 * Pixmap)
 }
 
 
+
+
+void Thresholder (uint16_t &P, int const * Position)
+{
+	(void) Position;
+	if (P > 70)
+	{
+		P = UINT16_MAX;
+	}
+}
+
+
 int main (int argc, char * argv [])
 {
 	Assert (argc == 1, "argc %i.", argc);
@@ -42,14 +52,22 @@ int main (int argc, char * argv [])
 	//Use shared memory between Pixmap and M1.
 	//TODO: Rethink matrix variable name.
 	struct Lepton_Pixel_Grayscale16 Pixmap [Lepton3_Width * Lepton3_Height];
-	cv::Mat M1 (Lepton3_Height, Lepton3_Width, CV_16U, Pixmap);
+	cv::Mat M0 (Lepton3_Height, Lepton3_Width, CV_16U, Pixmap);
+	cv::Mat M0_BG (Lepton3_Height, Lepton3_Width, CV_16U);
+	cv::Mat M1 (Lepton3_Height, Lepton3_Width, CV_16U);
+	
 	cv::Mat M2 (Lepton3_Height, Lepton3_Width, CV_8UC1);
 	cv::Mat M3 (Lepton3_Height, Lepton3_Width, CV_8UC3);
 	cv::Mat Foreground;
 
 	cv::namedWindow ("W1", CV_WINDOW_NORMAL | CV_WINDOW_OPENGL);
-	//cv::setWindowProperty ("W1", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
+	cv::namedWindow ("W2", CV_WINDOW_NORMAL | CV_WINDOW_OPENGL);
 	cv::resizeWindow ("W1", Lepton3_Width*5, Lepton3_Height*5);
+	cv::resizeWindow ("W2", Lepton3_Width*5, Lepton3_Height*5);
+	
+	
+	//cv::setWindowProperty ("W1", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
+	
 
 	cv::SimpleBlobDetector::Params Params;
 	Params.minThreshold = 60;
@@ -71,76 +89,53 @@ int main (int argc, char * argv [])
 
 	cv::Ptr<cv::SimpleBlobDetector> Blobber = cv::SimpleBlobDetector::create (Params);
 	std::vector<cv::KeyPoint> Targets;
-	std::vector<CM_Tracker> Trackers (4);
 
-	cv::Ptr<cv::BackgroundSubtractor> Subtractor = cv::createBackgroundSubtractorMOG2 ();
-
-	cv::RNG rng (0xFFF1231);
-
-	for (size_t I = 0; I < Trackers.size (); I = I + 1)
-	{
-		Trackers [I].Id = I;
-		Trackers [I].P.x = rng.uniform (0, Lepton3_Width);
-		Trackers [I].P.y = rng.uniform (0, Lepton3_Height);
-	}
 	
-	struct CM_Counter Counter = {0, 0, 0, 0};
-	
-	
+	//cv::Ptr<cv::BackgroundSubtractor> Subtractor = cv::createBackgroundSubtractorMOG2 (400, 14, true);
+	//cv::Ptr<cv::BackgroundSubtractorMOG2> Subtractor = cv::createBackgroundSubtractorMOG2 ();
+	//cv::Ptr<cv::BackgroundSubtractorMOG2> Subtractor = cv::createBackgroundSubtractorMOG2 ();
+	//cv::Ptr<cv::BackgroundSubtractorKNN> Subtractor = cv::createBackgroundSubtractorKNN (500, 50);
 
 	while (Should_Run)
 	{
 
 		Reciever (Pixmap);
-		Subtractor->apply (M1, Foreground);
-		Foreground.convertTo (M2, CV_8U);
-		cv::GaussianBlur (M2, M2, cv::Size (5, 5), 3.5, 3.5);
+		
+		cv::absdiff (M0, M0_BG, M1);
+		M0_BG = (M0_BG * 0.99) + (M0 * 0.01);
+		
+		//cv::normalize (M1, M2, 0, 255, cv::NORM_MINMAX, CV_8UC1);
+		
+		M1.forEach <uint16_t> (&Thresholder);
+		
+		cv::imshow ("W1", M1);
+		
+		
+		cv::normalize (M0_BG, M2, 0, 255, cv::NORM_MINMAX, CV_8UC1);
+		cv::imshow ("W2", M2);
+		
+
+		
+		//cv::GaussianBlur (M0, M0, cv::Size (3, 3), 3.5, 3.5);
+		//Subtractor->apply (M0, Foreground);
+		//Foreground.convertTo (M2, CV_8U);
+		//cv::medianBlur (M2, M2, 3);
+		//cv::GaussianBlur (M2, M2, cv::Size (5, 5), 3.5, 3.5);
+		/*
 		Blobber->detect (M2, Targets);
 		cv::cvtColor (M2, M3, cv::COLOR_GRAY2BGR);
-		//cv::drawTargets (M2, Targets, M3, cv::Scalar (0, 100, 255), cv::DrawMatchesFlags::DRAW_RICH_Targets);
-		
-		Persistent_Tracker (Targets, Trackers);
-		Countman (Trackers, Counter);
-		
-		
-		
-		for (size_t I = 0; I < Trackers.size (); I = I + 1)
-		{
-			char Buffer [128];
-			sprintf (Buffer, "%d", Trackers [I].Id);
-			cv::putText (M3, Buffer, Trackers [I].P + cv::Point2f (-3.0f, 3.0f), CV_FONT_HERSHEY_SCRIPT_SIMPLEX, 0.4, cv::Scalar (0, 0, 255), 1);
-			
-			if (Trackers [I].Persistence > 0)
-			{
-				cv::circle (M3, Trackers [I].P, 6.0f, cv::Scalar (0, 255, 0), 1);
-			}
-			
-			
-			cv::line (M3, Trackers [I].P - (Trackers [I].D * 40.0f), Trackers [I].P + (Trackers [I].D * 40.0f), cv::Scalar (0, 255, 100));
-		}
-
-
+		//cv::drawKeypoints (M2, Targets, M3, cv::Scalar (0, 100, 255), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
 		for (size_t I = 0; I < Targets.size (); I = I + 1)
 		{
-			cv::circle (M3, Targets [I].pt, 6.0f, cv::Scalar (255, 0, 0), 1);
+			cv::circle (M3, Targets [I].pt, Targets [I].size, cv::Scalar (255, 0, 0), 1);
 		}
-		
-		
-		cv::rectangle (M3, CM_N, cv::Scalar (255, 0, 255));
-		cv::rectangle (M3, CM_S, cv::Scalar (255, 0, 255));
-		cv::rectangle (M3, CM_W, cv::Scalar (255, 0, 255));
-		cv::rectangle (M3, CM_E, cv::Scalar (255, 0, 255));
-		
-		cv::rectangle (M3, CM_NE, cv::Scalar (255, 0, 255));
-		cv::rectangle (M3, CM_NW, cv::Scalar (255, 0, 255));
-		cv::rectangle (M3, CM_SE, cv::Scalar (255, 0, 255));
-		cv::rectangle (M3, CM_SW, cv::Scalar (255, 0, 255));
-		
-		cv::imshow ("W1", M3);
+		*/
+
+		//cv::imshow ("W1", M3);
 
 		int Key = cv::waitKey (1);
 		if (Key == 'q') {Should_Run = false;};
-		if (Key == 'u') {Foreground = M1;}
+		if (Key == 'u') {M0.copyTo (M0_BG);}
 		
 		
 		if (Key == 'p') 
