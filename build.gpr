@@ -21,10 +21,11 @@ project Build is
 		--"test_blobmqtt.cpp",
 		--"test_blobvisual.cpp",
 		--"test_blobvisual2.cpp",
-		"test_blobvisual3.cpp",
+		--"test_blobvisual3.cpp",
 		--"test_cont.cpp",
 		--"test_lepton_i2c.c",
 		--"test_multi_fifo.c",
+		"serv.c",
 		"default.c"
 	);
 	
@@ -42,6 +43,7 @@ project Build is
 			"-Wno-missing-field-initializers",
 			"-Wno-missing-braces", 
 			"-Wno-error=unused-but-set-variable",
+			"-Wno-error=unused-parameter",
 			"-std=gnu11", 
 			"-fdiagnostics-color", 
 			"-Wall", 
