@@ -9,6 +9,14 @@
 extern "C" {
 #endif
 
+#ifndef MIN
+#define MIN(X,Y) (((X) > (Y)) ? (X) : (Y))
+#endif
+
+#ifndef MAX
+#define MAX(X,Y) (((X) < (Y)) ? (X) : (Y))
+#endif
+
 //Linearly map (x) value from (A0 .. A1) to (B0 .. B1)
 int Map_Linear_int (int X, int A0, int A1, int B0, int B1)
 {
@@ -491,7 +499,7 @@ void Copy_floatv_u8v
 	assert (Dim == 0 || Destination != NULL);
 	for (size_t I = 0; I < Dim; I = I + 1)
 	{
-		Destination [I] = Source [I];
+		Destination [I] = (uint8_t) MIN (Source [I], UINT8_MAX);
 	}
 }
 
